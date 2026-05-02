@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+/* Кастомные цвета и шрифты через CSS-переменные */
+@theme {
+  /* Шрифты */
+  --font-inter: 'Inter', sans-serif;
+  --font-manrope: 'Manrope', sans-serif;
+
+  /* Цвета */
+  --color-primary: #014751;
+  --color-page-bg: #f6f9ff;
+  --color-card-border: #e2e8f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-placeholder: #64748b;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+
+  /* Скругления */
+  --radius-card: 24px;
+  --radius-input: 10px;
+}
