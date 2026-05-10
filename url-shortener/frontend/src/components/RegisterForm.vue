@@ -88,15 +88,16 @@
       </span>
     </label>
 
-    <!-- ошибка -->
+    <!-- Ошибка -->
     <div v-if="error" class="text-red-600 text-sm">{{ error }}</div>
 
-    <!-- Зарегистрироваться -->
+    <!-- Кнопка -->
     <button
       type="submit"
       class="w-full h-10 bg-[#014751] text-white rounded-[10px] text-[17px] font-medium font-['Inter'] hover:bg-[#013d41] transition-colors"
+      :disabled="loading"
     >
-      Зарегистрироваться
+      {{ loading ? 'Обработка...' : 'Зарегистрироваться' }}
     </button>
   </form>
 </template>
@@ -106,6 +107,12 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const error = ref('')
+const loading = ref(false)
+
+// 🔥 Объявляем API_URL здесь, чтобы он был виден во всей функции
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 const form = reactive({
   firstName: '',
   lastName: '',
@@ -115,41 +122,74 @@ const form = reactive({
   confirmPassword: '',
   agree: false,
 })
-const error = ref('')
 
 const handleSubmit = async () => {
   error.value = ''
+  loading.value = true
 
+  // Валидация
   if (form.password !== form.confirmPassword) {
     error.value = 'Пароли не совпадают'
+    loading.value = false
     return
   }
 
   try {
-    const res = await fetch('http://localhost:8080/api/register', {
+    // 1. РЕГИСТРАЦИЯ
+    const registerRes = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        firstName: form.firstName,
-        lastName: form.lastName,
         email: form.email,
-        phone: form.phone,
+        password: form.password,
+        // firstName/lastName можно добавить в бэкенд позже
+      }),
+    })
+
+    if (!registerRes.ok) {
+      const text = await registerRes.text()
+      error.value = text || 'Ошибка регистрации'
+      loading.value = false
+      return
+    }
+
+    // 2. АВТО-ЛОГИН (чтобы получить токен)
+    const loginResponse = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email,
         password: form.password,
       }),
     })
 
-    if (!res.ok) {
-      const text = await res.text()
-      error.value = text
-      return
-    }
+    // 🔥 ПРОВЕРКА: loginResponse определен в этой области видимости
+    if (loginResponse.ok) {
+      const loginData = await loginResponse.json()
 
-    const data = await res.json()
-    localStorage.setItem('token', data.token)
-    router.push('/')
+      // Отладка в консоль
+      if (import.meta.env.DEV) {
+        console.log('Login data:', loginData)
+      }
+
+      if (loginData.access_token) {
+        // 🔥 Сохраняем токен с правильным ключом
+        localStorage.setItem('access_token', loginData.access_token)
+        router.push('/')
+      } else {
+        console.error('No access_token in response')
+        error.value = 'Ошибка: токен не получен'
+      }
+    } else {
+      // Если авто-логин не сработал
+      alert('Регистрация успешна! Теперь войдите.')
+      router.push('/auth')
+    }
   } catch (err) {
+    console.error('Registration error:', err)
     error.value = 'Ошибка сети или сервера'
-    console.error(err)
+  } finally {
+    loading.value = false
   }
 }
 </script>

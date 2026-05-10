@@ -1,51 +1,70 @@
-version: "3.9"
+version: '3.8'
+
 services:
-  db:
-    image: postgres:15
+  postgres:
+    image: postgres:15-alpine
+    container_name: url-shortener-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1
-      POSTGRES_DB: linqs
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: urlshortener
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations/001_init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
-    volumes:
-        - db_data:/var/lib/postgresql/data
-        - ./db/init_plain.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - linqs_network
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d urlshortener"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: url-shortener-redis
+    networks:
+      - app-network
 
   backend:
-    build: ./back
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: url-shortener-api
     environment:
-      DATABASE_URL: postgres://postgres:1@db:5432/linqs?sslmode=disable
+      DATABASE_URL: postgres://appuser:apppassword@postgres:5432/urlshortener?sslmode=disable
+      JWT_SECRET: dev_secret_fixed_do_not_change_12345
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600}
+      SERVER_PORT: :8080
+      FRONTEND_URL: http://localhost
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      postgres:
+        condition: service_healthy
     networks:
-      - linqs_network
+      - app-network
+    restart: unless-stopped
 
   frontend:
-    build: ./linqs-front
-    networks:
-      - linqs_network
-
-  nginx:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${API_BASE_URL:-http://localhost:8080}
+    container_name: url-shortener-web
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - frontend
       - backend
     networks:
-      - linqs_network
-
-volumes:
-  db_data:
+      - app-network
+    restart: unless-stopped
 
 networks:
-  linqs_network:
+  app-network:
     driver: bridge
+
+volumes:
+  postgres_data:

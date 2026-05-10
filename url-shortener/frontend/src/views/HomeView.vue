@@ -82,7 +82,7 @@
             class="flex-1 h-10 px-4 border border-card-border rounded-[10px] font-inter text-[17px] text-text-primary placeholder:text-placeholder focus:outline-none focus:border-primary transition-colors"
           />
           <button
-            @click="createLink"
+            @click="handleShorten"
             class="h-10 px-6 bg-primary text-white rounded-[10px] font-inter text-[17px] font-medium hover:bg-[#013d41] transition-colors"
           >
             Сократить
@@ -133,7 +133,9 @@
               </div>
 
               <div class="flex items-center gap-2">
-                <button class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors">
+                <button
+                  class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+                >
                   <img src="@/components/icons/link_secondary.svg" alt="" />
                 </button>
                 <button
@@ -142,7 +144,9 @@
                 >
                   <img src="@/components/icons/copy_secondary.svg" alt="" />
                 </button>
-                <button class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors">
+                <button
+                  class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+                >
                   <img src="@/components/icons/edit_secondary.svg" alt="" />
                 </button>
               </div>
@@ -160,11 +164,7 @@
     />
 
     <!-- Попап ошибки -->
-    <LinkErrorPopup
-      v-if="showErrorPopup"
-      :url="errorUrl"
-      @close="showErrorPopup = false"
-    />
+    <LinkErrorPopup v-if="showErrorPopup" :url="errorUrl" @close="showErrorPopup = false" />
 
     <!-- Попап копирования -->
     <ToastNotification
@@ -182,7 +182,9 @@
       @click.self="showWIPPopup = false"
     >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center">
+        <div
+          class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center"
+        >
           <img src="@/components/icons/dev.svg" alt="" />
         </div>
         <h3 class="font-manrope font-bold text-[24px] text-text-primary mb-2">Упс!</h3>
@@ -207,7 +209,11 @@ import LinkCreatedPopup from '@/components/LinkCreatedPopup.vue'
 import LinkErrorPopup from '@/components/ErrorCreatedPopup.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
 
+// 🔥 Используем переменную окружения вместо хардкода
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const router = useRouter()
+
+// Состояние UI
 const showWIPPopup = ref(false)
 const showLinkPopup = ref(false)
 const showToast = ref(false)
@@ -233,8 +239,7 @@ const links = ref<Link[]>([])
 // Копирование ссылки
 const copyLink = async (shortUrl: string) => {
   try {
-    // используем короткий URL без изменений
-    await navigator.clipboard.writeText(`${shortUrl}`)
+    await navigator.clipboard.writeText(shortUrl)
     showToast.value = true
   } catch (err) {
     console.error('Failed to copy:', err)
@@ -243,32 +248,51 @@ const copyLink = async (shortUrl: string) => {
 
 // Получение всех ссылок
 const fetchLinks = async () => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('access_token')?.trim()
+  if (import.meta.env.DEV) {
+    console.log('🔑 Token:', token ? 'EXISTS' : 'NOT FOUND')
+  }
   if (!token) return router.push('/auth')
 
   try {
-    const response = await fetch('http://localhost:8080/api/links', {
+    if (import.meta.env.DEV) {
+      console.log('📡 Sending request to /api/links...')
+    }
+    const response = await fetch(`${API_URL}/api/links`, {
       method: 'GET',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
     })
+    if (import.meta.env.DEV) {
+      console.log('📥 Response status:', response.status)
+      console.log('📥 Response headers:', [...response.headers.entries()])
+    }
+
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ Error:', errorText)
       if (response.status === 401) {
-        localStorage.removeItem('token')
+        localStorage.removeItem('access_token')
         router.push('/auth')
       }
       return
     }
 
     const data = await response.json()
+    if (import.meta.env.DEV) {
+      console.log('✅ Success! Links:', data)
+    }
     links.value = data.map((item: any) => ({
       id: item.id,
-      shortUrl: `http://localhost:8080/${item.short_link}`,
-      originalUrl: item.original_link?.replace(/^https?:\/\//, '') || '',
-      clicks: (item.clicks ?? 0).toString(),
+      shortUrl: `${API_URL}/${item.short_code}`,
+      originalUrl: item.original_url?.replace(/^https?:\/\//, '') || '',
+      clicks: '0',
       growth: 0,
     }))
   } catch (err) {
-    console.error('Failed to fetch links:', err)
+    console.error('💥 Network error:', err)
   }
 }
 
@@ -276,32 +300,37 @@ const fetchLinks = async () => {
 const handleShorten = async () => {
   if (!newLink.url) return
 
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('access_token')?.trim()
   if (!token) return router.push('/auth')
 
   try {
-    const response = await fetch('http://localhost:8080/api/shorten', {
+    const response = await fetch(`${API_URL}/api/links`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ url: newLink.url }),
+      // 🔥 Бэкенд ожидает поле original_url
+      body: JSON.stringify({ original_url: newLink.url }),
     })
 
     if (!response.ok) {
-      // Показываем негативный попап
       errorUrl.value = newLink.url
       showErrorPopup.value = true
       return
     }
 
-    const shortCode = await response.text()
-    const shortUrl = `http://localhost:8080/${shortCode}`
-    createdLink.value = shortUrl
+    // 🔥 Бэкенд возвращает JSON, а не текст
+    const data = await response.json()
+    const shortCode = data.short_code
+    const shortUrl = `${API_URL}/${shortCode}`
 
+    createdLink.value = shortUrl
+    showLinkPopup.value = true
+
+    // Добавляем в локальный список для мгновенного отображения
     links.value.unshift({
-      id: Date.now(),
+      id: data.id || Date.now(),
       shortUrl,
       originalUrl: newLink.url.replace(/^https?:\/\//, ''),
       clicks: '0',
@@ -310,7 +339,6 @@ const handleShorten = async () => {
 
     newLink.url = ''
     newLink.comment = ''
-    showLinkPopup.value = true
   } catch (err) {
     console.error(err)
     errorUrl.value = newLink.url
@@ -318,10 +346,8 @@ const handleShorten = async () => {
   }
 }
 
-const createLink = () => handleShorten()
-
 const handleLogout = () => {
-  localStorage.removeItem('token')
+  localStorage.removeItem('access_token')
   router.push('/auth')
 }
 

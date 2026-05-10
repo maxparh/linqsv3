@@ -21,16 +21,13 @@
           <button
             @click="close"
             class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
-          >
-            
-          </button>
+          ></button>
 
           <!-- Иконка ошибки -->
           <div
             class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center"
           >
             <svg width="32" height="32" viewBox="0 0 32 32" fill="white" class="text-red-600">
-              
               <path d="M16 10V18" stroke="white" stroke-width="4" stroke-linecap="round" />
               <circle cx="16" cy="22" r="1.5" fill="white" />
             </svg>

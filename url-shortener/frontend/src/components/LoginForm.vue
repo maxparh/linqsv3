@@ -47,6 +47,8 @@
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 // Router
 const router = useRouter()
 
@@ -60,11 +62,12 @@ const form = reactive({
 // Функция логина
 const handleLogin = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/login', {
+    // 🔥 Используем переменную из .env
+    const API_URL = import.meta.env.VITE_API_BASE_URL
+
+    const response = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: form.email,
         password: form.password,
@@ -79,15 +82,23 @@ const handleLogin = async () => {
 
     const data = await response.json()
 
-    if (!data.token) {
+    if (!data.access_token) {
       alert('Токен не получен')
       return
     }
 
-    localStorage.setItem('token', data.token)
-
-    // console.log('JWT сохранён:', data.token)
-
+    // Принудительно ждем записи
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    localStorage.setItem('access_token', data.access_token)
+    // Проверяем что записалось
+    const check = localStorage.getItem('access_token')
+    if (import.meta.env.DEV) {
+      console.log('Token saved?', !!check)
+    }
+    if (!check) {
+      alert('Не удалось сохранить токен! Проверь настройки браузера')
+      return
+    }
     await router.push('/')
   } catch (err) {
     console.error(err)
