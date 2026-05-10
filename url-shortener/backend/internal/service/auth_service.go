@@ -1,18 +1,20 @@
 package service
 
 import (
-	"context"
-	"errors"
-	"log"
-	"time"
-	"url-shortener/internal/domain"
-	"url-shortener/internal/repository"
+    "context"
+    "errors"
+    "log"
+    "strings"
+    "time"
+    "url-shortener/internal/domain"
+    "url-shortener/internal/repository"
 
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
+    "github.com/golang-jwt/jwt/v5"  // ← внешние после пустой строки
+    "golang.org/x/crypto/bcrypt"
 )
 
 var ErrInvalidCredentials = errors.New("invalid email or password")
+
 
 type AuthService interface {
 	Register(ctx context.Context, req *domain.CreateUserRequest) (*domain.User, error)
@@ -51,8 +53,9 @@ func (s *authService) Register(ctx context.Context, req *domain.CreateUserReques
 	}
 
 	user := &domain.User{
-		Email:        req.Email,
-		PasswordHash: string(hash),
+    Email:        req.Email,
+    PasswordHash: string(hash),
+    Phone:        req.Phone,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -65,15 +68,26 @@ func (s *authService) Register(ctx context.Context, req *domain.CreateUserReques
 }
 
 func (s *authService) Login(ctx context.Context, req *domain.LoginRequest) (*domain.AuthTokens, error) {
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	var user *domain.User
+	var err error
+
+	if strings.Contains(req.Identifier, "@") {
+		// Поиск по email
+		user, err = s.userRepo.GetByEmail(ctx, req.Identifier)
+	} else {
+		// Поиск по телефону
+		normalizedPhone := normalizePhoneToE164(req.Identifier)
+		user, err = s.userRepo.GetByPhone(ctx, normalizedPhone)
+	}
+
+	// Обработка ошибки
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return nil, ErrInvalidCredentials
 		}
 		return nil, err
 	}
-
-	// Сравнение хэшей
+	// Сравнение хэшей пароля (этот блок БЫЛ в оригинале, его нужно вернуть)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
@@ -84,6 +98,7 @@ func (s *authService) Login(ctx context.Context, req *domain.LoginRequest) (*dom
 		return nil, err
 	}
 
+	// Возврат токенов
 	return &domain.AuthTokens{
 		AccessToken: token,
 		TokenType:   "Bearer",
@@ -137,4 +152,31 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func normalizePhoneToE164(phone string) string {
+	// Удаляем всё кроме цифр и +
+	digits := ""
+	for _, r := range phone {
+		if r >= '0' && r <= '9' || r == '+' {
+			digits += string(r)
+		}
+	}
+
+	// Нормализация
+	if strings.HasPrefix(digits, "8") && len(digits) == 11 {
+		return "+7" + digits[1:]
+	}
+	if strings.HasPrefix(digits, "+7") {
+		return digits
+	}
+	if strings.HasPrefix(digits, "7") && len(digits) == 11 {
+		return "+" + digits
+	}
+	if len(digits) == 10 {
+		return "+7" + digits
+	}
+
+	// Если не распознали — возвращаем как есть (поиск всё равно не найдёт)
+	return digits
 }

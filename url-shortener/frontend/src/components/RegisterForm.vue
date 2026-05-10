@@ -37,13 +37,15 @@
     </div>
 
     <!-- Телефон (необязательно) -->
-    <div>
+    <div class="relative z-10">
       <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5">Телефон</label>
-      <input
-        v-model="form.phone"
-        type="tel"
-        placeholder="+7 (999) 123-45-67"
-        class="w-full h-10 px-4 bg-white border border-[#E2E8F0] rounded-[10px] text-[17px] text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:border-[#014751] transition-colors"
+      <VueTelInput
+        v-model="phoneDisplay"
+        :defaultCountry="'RU'"
+        :autoFormat="true"
+        :validCharactersOnly="true"
+        :placeholder="'\u002B7 (999) 123-45-67'"
+        @input="handleTelInput"
       />
     </div>
 
@@ -61,9 +63,7 @@
 
     <!-- Подтвердите пароль -->
     <div>
-      <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5"
-        >Подтвердите пароль</label
-      >
+      <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5">Подтвердите пароль</label>
       <input
         v-model="form.confirmPassword"
         type="password"
@@ -105,29 +105,85 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { VueTelInput } from 'vue-tel-input'
+import 'vue-tel-input/vue-tel-input.css'
 
 const router = useRouter()
 const error = ref('')
 const loading = ref(false)
+const phoneDisplay = ref('')  // Форматированный номер для отображения
+const phoneE164 = ref('')     // Чистый номер для API (+79991234567)
 
-// 🔥 Объявляем API_URL здесь, чтобы он был виден во всей функции
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const form = reactive({
   firstName: '',
   lastName: '',
   email: '',
-  phone: '',
+  phone: '',  // Отправляем в БД
   password: '',
   confirmPassword: '',
   agree: false,
 })
 
+// 🔥 Безопасный парсер: принимает ЛЮБОЙ тип, возвращает string | null
+const parsePhoneToE164 = (input: unknown): string | null => {
+  // 1. Приводим к строке безопасно
+  let value: string
+  if (input == null) return null
+  if (typeof input === 'string') {
+    value = input
+  } else if (typeof input === 'number') {
+    value = String(input)
+  } else if (input instanceof Event) {
+    // Нативное событие — берем значение из target
+    const target = input.target as HTMLInputElement
+    value = target?.value || ''
+  } else {
+    // Попытка вызвать toString
+    try {
+      value = String(input)
+    } catch {
+      return null
+    }
+  }
+
+  // 2. Пустая строка
+  if (!value.trim()) return null
+
+  // 3. Оставляем только цифры и +
+  const digits = value.replace(/[^\d+]/g, '')
+  if (!digits) return null
+
+  // 4. Нормализация в E.164
+  if (digits.startsWith('8') && digits.length === 11) {
+    return '+7' + digits.slice(1)
+  }
+  if (digits.startsWith('+7')) {
+    return digits
+  }
+  if (digits.startsWith('7') && digits.length === 11) {
+    return '+' + digits
+  }
+  if (digits.length === 10) {
+    return '+7' + digits
+  }
+
+  return null // Не валидный формат
+}
+
+// 🔥 Обработчик @input для vue-tel-input v9
+// Может прийти: string, Event, или объект — парсер всё обработает
+const handleTelInput = (payload: unknown) => {
+  const result = parsePhoneToE164(payload)
+  phoneE164.value = result || ''
+  console.log('📱 handleTelInput:', { payload: typeof payload, result: phoneE164.value })
+}
+
 const handleSubmit = async () => {
   error.value = ''
   loading.value = true
 
-  // Валидация
   if (form.password !== form.confirmPassword) {
     error.value = 'Пароли не совпадают'
     loading.value = false
@@ -135,6 +191,15 @@ const handleSubmit = async () => {
   }
 
   try {
+    // 🔥 Финальный парсинг прямо перед отправкой (двойная защита)
+    const finalPhone = parsePhoneToE164(phoneDisplay.value) || phoneE164.value || null
+    const phonePayload = finalPhone ? finalPhone : undefined
+
+    console.log('🔍 phoneDisplay:', phoneDisplay.value)
+    console.log('🔍 phoneE164:', phoneE164.value)
+    console.log('🔍 finalPhone:', finalPhone)
+    console.log('🔍 phonePayload:', phonePayload)
+
     // 1. РЕГИСТРАЦИЯ
     const registerRes = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
@@ -142,7 +207,7 @@ const handleSubmit = async () => {
       body: JSON.stringify({
         email: form.email,
         password: form.password,
-        // firstName/lastName можно добавить в бэкенд позже
+        phone: phonePayload,
       }),
     })
 
@@ -153,27 +218,23 @@ const handleSubmit = async () => {
       return
     }
 
-    // 2. АВТО-ЛОГИН (чтобы получить токен)
+    // 2. АВТО-ЛОГИН
     const loginResponse = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: form.email,
+        identifier: form.email,
         password: form.password,
       }),
     })
 
-    // 🔥 ПРОВЕРКА: loginResponse определен в этой области видимости
     if (loginResponse.ok) {
       const loginData = await loginResponse.json()
-
-      // Отладка в консоль
       if (import.meta.env.DEV) {
-        console.log('Login data:', loginData)
+        console.log('Login ', loginData)
       }
 
       if (loginData.access_token) {
-        // 🔥 Сохраняем токен с правильным ключом
         localStorage.setItem('access_token', loginData.access_token)
         router.push('/')
       } else {
@@ -181,7 +242,6 @@ const handleSubmit = async () => {
         error.value = 'Ошибка: токен не получен'
       }
     } else {
-      // Если авто-логин не сработал
       alert('Регистрация успешна! Теперь войдите.')
       router.push('/auth')
     }
@@ -190,6 +250,32 @@ const handleSubmit = async () => {
     error.value = 'Ошибка сети или сервера'
   } finally {
     loading.value = false
+    phoneDisplay.value = ''
+    phoneE164.value = ''
+    form.phone = ''
   }
 }
 </script>
+
+<style scoped>
+:deep(.vue-tel-input) { border: none !important; box-shadow: none !important; }
+:deep(.vue-tel-input input) {
+  height: 40px !important; border: 1px solid #E2E8F0 !important;
+  border-radius: 10px !important; background: white !important;
+  font-family: 'Inter', sans-serif !important; font-size: 17px !important;
+  color: #0F172A !important; padding: 0 16px !important;
+  transition: border-color 0.2s !important;
+}
+:deep(.vue-tel-input input:focus) { outline: none !important; border-color: #014751 !important; }
+:deep(.vue-tel-input input::placeholder) { color: #64748B !important; }
+:deep(.vue-tel-input .dropdown) {
+  z-index: 50 !important; border-radius: 10px !important;
+  border: 1px solid #E2E8F0 !important; font-family: 'Inter', sans-serif !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  max-height: 200px !important; overflow-y: auto !important;
+}
+:deep(.vue-tel-input .selection) {
+  height: 40px !important; border-right: 1px solid #E2E8F0 !important;
+  background: white !important;
+}
+</style>

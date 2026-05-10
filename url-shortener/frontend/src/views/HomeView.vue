@@ -284,7 +284,7 @@ const fetchLinks = async () => {
     if (import.meta.env.DEV) {
       console.log('✅ Success! Links:', data)
     }
-    links.value = data.map((item: any) => ({
+    links.value = data?.map((item: any) => ({
       id: item.id,
       shortUrl: `${API_URL}/${item.short_code}`,
       originalUrl: item.original_url?.replace(/^https?:\/\//, '') || '',

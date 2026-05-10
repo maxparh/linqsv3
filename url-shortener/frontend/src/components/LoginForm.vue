@@ -1,11 +1,18 @@
 <template>
+  <ToastNotification
+  :show="toastShow"
+  :title="toastTitle"
+  :message="toastMessage"
+  :duration="3000"
+  @close="toastShow = false"
+  />
   <form @submit.prevent="handleSubmit" class="space-y-4">
     <div>
       <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5">Email</label>
       <input
-        v-model="form.email"
-        type="email"
-        placeholder="your@email.com"
+        v-model="form.identifier"
+        type="text"
+        placeholder="Ваш email или телефон"
         class="w-full h-10 px-4 bg-white border border-[#E2E8F0] rounded-[10px] text-[17px] text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:border-[#014751] transition-colors"
       />
     </div>
@@ -44,8 +51,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+
+import ToastNotification from '@/components/ToastNotification.vue' // ✅ Проверь путь
+
+// Состояние для модального уведомления
+const toastShow = ref(false)
+const toastTitle = ref('')
+const toastMessage = ref('')
+
+// Вспомогательная функция для показа
+const showToast = (title: string, message: string) => {
+  toastTitle.value = title
+  toastMessage.value = message
+  toastShow.value = true
+  // Компонент сам закроется через duration (3 сек)
+}
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -54,7 +76,7 @@ const router = useRouter()
 
 // Форма логина
 const form = reactive({
-  email: '',
+  identifier: '',
   password: '',
   remember: false,
 })
@@ -62,28 +84,26 @@ const form = reactive({
 // Функция логина
 const handleLogin = async () => {
   try {
-    // 🔥 Используем переменную из .env
-    const API_URL = import.meta.env.VITE_API_BASE_URL
 
     const response = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: form.email,
+        identifier: form.identifier,
         password: form.password,
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      alert('Ошибка: ' + errorText)
+      showToast('Ошибка входа', 'Неверный email/телефон или пароль')
       return
     }
 
     const data = await response.json()
 
     if (!data.access_token) {
-      alert('Токен не получен')
+      showToast('Ошибка', 'Токен не получен')
       return
     }
 
@@ -96,13 +116,13 @@ const handleLogin = async () => {
       console.log('Token saved?', !!check)
     }
     if (!check) {
-      alert('Не удалось сохранить токен! Проверь настройки браузера')
+      showToast('Ошибка', 'Не удалось сохранить токен')
       return
     }
     await router.push('/')
   } catch (err) {
     console.error(err)
-    alert('Ошибка подключения к серверу')
+    showToast('Ошибка сети', 'Проверь подключение к интернету')
   }
 }
 
