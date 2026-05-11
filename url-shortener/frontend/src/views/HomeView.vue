@@ -258,7 +258,7 @@ const fetchLinks = async () => {
     if (import.meta.env.DEV) {
       console.log('📡 Sending request to /api/links...')
     }
-    const response = await fetch(`${API_URL}/api/links`, {
+    const response = await fetch(`${API_URL}/links`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -304,7 +304,7 @@ const handleShorten = async () => {
   if (!token) return router.push('/auth')
 
   try {
-    const response = await fetch(`${API_URL}/api/links`, {
+    const response = await fetch(`${API_URL}/links`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

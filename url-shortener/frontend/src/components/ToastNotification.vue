@@ -26,11 +26,24 @@
             v-show="visible"
             class="bg-white rounded-card border border-card-border p-8 max-w-[320px] w-full text-center relative shadow-2xl"
           >
-            <!-- Иконка успеха -->
+            <!-- Иконка: динамическая -->
             <div
-              class="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center"
+              class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+              :class="type === 'error' ? 'bg-red-100' : 'bg-success/10'"
             >
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <!-- Иконка ошибки (красный крестик) -->
+              <svg v-if="type === 'error'" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <path
+                  d="M16 8V16M16 20H16.01M8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16Z"
+                  stroke="#EF4444"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              
+              <!-- Иконка успеха (зелёная галочка) -->
+              <svg v-else width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <path
                   d="M6 16L13 23L26 9"
                   stroke="#10B981"
@@ -65,6 +78,7 @@ const props = defineProps<{
   title: string
   message: string
   duration?: number
+  type?: 'success' | 'error'
 }>()
 
 const emit = defineEmits<{
@@ -90,13 +104,11 @@ const close = () => {
   emit('close')
 }
 
-// Показ с запуском таймера
 const showWithAnimation = () => {
   visible.value = true
   startTimer()
 }
 
-// Реакция на изменение props.show
 watch(
   () => props.show,
   (newVal) => {
@@ -106,6 +118,6 @@ watch(
       close()
     }
   },
-  { immediate: true } // ← Важно: сработает при первом монтировании
+  { immediate: true }
 )
 </script>

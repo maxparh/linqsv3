@@ -55,6 +55,8 @@ func main() {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 	mux.Handle("/api/links", authMiddleware.RequireAuth(protectedMux))
 
+	mux.HandleFunc("GET /api/resolve/", linkHandler.ResolveLink)
+
 	// Редиректы (должен быть в конце, ловит всё остальное)
 	mux.HandleFunc("/", linkHandler.Redirect)
 

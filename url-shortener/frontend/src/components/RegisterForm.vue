@@ -100,6 +100,15 @@
       {{ loading ? 'Обработка...' : 'Зарегистрироваться' }}
     </button>
   </form>
+
+  <ToastNotification
+    :show="toastShow"
+    :title="toastTitle"
+    :message="toastMessage"
+    :duration="3000"
+    type="error"
+    @close="toastShow = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -107,12 +116,44 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { VueTelInput } from 'vue-tel-input'
 import 'vue-tel-input/vue-tel-input.css'
+import ToastNotification from '@/components/ToastNotification.vue'
 
 const router = useRouter()
 const error = ref('')
 const loading = ref(false)
 const phoneDisplay = ref('')  // Форматированный номер для отображения
 const phoneE164 = ref('')     // Чистый номер для API (+79991234567)
+const toastShow = ref(false)
+const toastTitle = ref('')
+const toastMessage = ref('')
+
+const showToast = (title: string, message: string) => {
+  toastTitle.value = title
+  toastMessage.value = message
+  toastShow.value = true
+  // Компонент сам закроется через 3 сек
+}
+
+const parseRegistrationError = (errorMsg: string): { title: string, message: string } => {
+  const lowerError = errorMsg.toLowerCase()
+  
+  if (errorMsg.includes('users_phone_key') || lowerError.includes('phone')) {
+    return { title: 'Номер уже занят', message: 'Пользователь с таким номером телефона уже зарегистрирован' }
+  }
+  
+  if (errorMsg.includes('users_email_key') || lowerError.includes('email')) {
+    return { title: 'Email уже занят', message: 'Пользователь с таким email уже зарегистрирован' }
+  }
+  
+  // Универсальная проверка для "user already exists"
+  if (lowerError.includes('already exists')) {
+    return phoneE164.value 
+      ? { title: 'Номер уже занят', message: 'Пользователь с таким номером телефона уже зарегистрирован' }
+      : { title: 'Email уже занят', message: 'Пользователь с таким email уже зарегистрирован' }
+  }
+  
+  return { title: 'Ошибка регистрации', message: errorMsg || 'Не удалось создать аккаунт' }
+}
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -201,7 +242,7 @@ const handleSubmit = async () => {
     console.log('🔍 phonePayload:', phonePayload)
 
     // 1. РЕГИСТРАЦИЯ
-    const registerRes = await fetch(`${API_URL}/api/register`, {
+    const registerRes = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -212,6 +253,20 @@ const handleSubmit = async () => {
     })
 
     if (!registerRes.ok) {
+      if (registerRes.status === 409) {
+        try {
+          const data = await registerRes.json()
+          const { title, message } = parseRegistrationError(data.error || '')
+          showToast(title, message)
+        } catch {
+          // Если не удалось распарсить JSON
+          showToast('Ошибка регистрации', 'Пользователь с такими данными уже существует')
+        }
+        loading.value = false
+        return
+      }
+      
+      // Остальные ошибки (400, 500, и т.д.)
       const text = await registerRes.text()
       error.value = text || 'Ошибка регистрации'
       loading.value = false
@@ -219,7 +274,7 @@ const handleSubmit = async () => {
     }
 
     // 2. АВТО-ЛОГИН
-    const loginResponse = await fetch(`${API_URL}/api/login`, {
+    const loginResponse = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

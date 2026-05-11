@@ -2,9 +2,12 @@ package handler
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 	"url-shortener/internal/domain"
 	"url-shortener/internal/service"
 	"url-shortener/internal/middleware"
@@ -13,7 +16,7 @@ import (
 type LinkHandler struct {
 	linkService      service.LinkService
 	analyticsService service.AnalyticsService
-	baseURL          string // Например, https://short.ly
+	baseURL          string
 }
 
 func NewLinkHandler(linkService service.LinkService, analyticsService service.AnalyticsService, baseURL string) *LinkHandler {
@@ -24,13 +27,37 @@ func NewLinkHandler(linkService service.LinkService, analyticsService service.An
 	}
 }
 
+// hashIP хэширует IP через SHA256 (64 символа)
+func hashIP(ip string) string {
+	hash := sha256.Sum256([]byte(ip))
+	return fmt.Sprintf("%x", hash)
+}
+
+// parseBrowser определяет браузер из User-Agent
+func parseBrowser(ua string) string {
+	uaLower := strings.ToLower(ua)
+	switch {
+	case strings.Contains(uaLower, "edg"):
+		return "Edge"
+	case strings.Contains(uaLower, "chrome"):
+		return "Chrome"
+	case strings.Contains(uaLower, "firefox"):
+		return "Firefox"
+	case strings.Contains(uaLower, "safari"):
+		return "Safari"
+	case strings.Contains(uaLower, "opera") || strings.Contains(uaLower, "opr"):
+		return "Opera"
+	default:
+		return "Unknown"
+	}
+}
+
 func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
-	// Получаем UserID из контекста (добавим middleware позже)
 	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
 	if !ok {
 		WriteError(w, http.StatusUnauthorized, "user not authenticated")
@@ -73,13 +100,39 @@ func (h *LinkHandler) GetUserLinks(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, links)
 }
 
-// Redirect обрабатывает переход по короткой ссылке
-func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
-	// Извлекаем код из URL. Ожидаем путь вида /{code}
-	code := strings.TrimPrefix(r.URL.Path, "/")
+// ResolveLink — API-эндпоинт для получения original_url (для фронтенда)
+// Путь: /api/resolve/{code}
+func (h *LinkHandler) ResolveLink(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
 
-	// Если код пустой или это корень, отдаем 404 или главную
-	if code == "" || code == "/" {
+	code := strings.TrimPrefix(r.URL.Path, "/api/resolve/")
+	if code == "" || strings.Contains(code, "/") {
+		WriteError(w, http.StatusBadRequest, "invalid short code")
+		return
+	}
+
+	link, err := h.linkService.GetLinkByCode(r.Context(), code)
+	if err != nil {
+		WriteError(w, http.StatusNotFound, "link not found")
+		return
+	}
+
+	// Асинхронно записываем клик (не блокируем ответ)
+	go h.recordClick(r.Context(), link.ID, r)
+
+	WriteJSON(w, http.StatusOK, map[string]string{
+		"original_url": link.OriginalURL,
+	})
+}
+
+// Redirect — прямой редирект (для старых ссылок или если фронт не используется)
+// Путь: /{code}
+func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
+	code := strings.TrimPrefix(r.URL.Path, "/")
+	if code == "" || code == "/" || strings.HasPrefix(code, "api/") {
 		http.NotFound(w, r)
 		return
 	}
@@ -90,34 +143,41 @@ func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Асинхронно записываем клик, чтобы не задерживать редирект
 	go h.recordClick(r.Context(), link.ID, r)
-
-	// Выполняем редирект
-	http.Redirect(w, r, link.OriginalURL, http.StatusFound) // 302 Found
+	http.Redirect(w, r, link.OriginalURL, http.StatusFound)
 }
 
+// recordClick — запись статистики клика
 func (h *LinkHandler) recordClick(ctx context.Context, linkID int, r *http.Request) {
-	// Простая эвристика для определения устройства
+	// Устройство
 	deviceType := "desktop"
-	if strings.Contains(strings.ToLower(r.UserAgent()), "mobile") {
+	ua := r.UserAgent()
+	uaLower := strings.ToLower(ua)
+	if strings.Contains(uaLower, "mobile") || strings.Contains(uaLower, "android") || strings.Contains(uaLower, "iphone") {
 		deviceType = "mobile"
 	}
 
-	// Парсинг IP (учитывая прокси)
+	// IP (с учётом прокси)
 	ip := r.RemoteAddr
 	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
 		ip = strings.Split(forwarded, ",")[0]
 	}
+	ipHash := hashIP(strings.TrimSpace(ip))
 
+	// Браузер
+	browser := parseBrowser(ua)
+
+	// Создаём объект клика с полями, соответствующими БД
 	stat := &domain.ClickStat{
-		LinkID:     linkID,
-		IPAddress:  ip,
-		UserAgent:  r.UserAgent(),
-		Country:    "US", // Заглушка, в реальном проекте нужен GeoIP сервис
-		DeviceType: deviceType,
-		Browser:    "Unknown", // Заглушка
+		LinkID:      linkID,
+		IPAddress:   ipHash,         // SHA256 хэш (64 символа)
+		UserAgent:   ua,
+		CountryCode: "RU",           // ← Поле как в БД: country_code
+		DeviceType:  deviceType,
+		BrowserName: browser,        // ← Поле как в БД: browser_name
+		ClickedAt:   time.Time{},    // Zero value → БД подставит NOW()
 	}
 
-	h.analyticsService.RecordClick(context.Background(), stat)
+	// Записываем клик (игнорируем ошибку, чтобы не ломать редирект)
+	_ = h.analyticsService.RecordClick(context.Background(), stat)
 }

@@ -3,19 +3,34 @@ package domain
 import "time"
 
 type ClickStat struct {
-	ID         int       `json:"id"`
-	LinkID     int       `json:"link_id"`
-	IPAddress  string    `json:"ip_address"` // В БД INET, в Go string для простоты сериализации
-	UserAgent  string    `json:"user_agent"`
-	Country    string    `json:"country"`
-	DeviceType string    `json:"device_type"`
-	Browser    string    `json:"browser"`
-	ClickedAt  time.Time `json:"clicked_at"`
+	ID          int       `json:"id"`
+	LinkID      int       `json:"link_id"`
+	IPAddress   string    `json:"-"`             
+	UserAgent   string    `json:"user_agent"`
+	CountryCode string    `json:"country_code"`   
+	DeviceType  string    `json:"device_type"`
+	BrowserName string    `json:"browser_name"`  
+	ClickedAt   time.Time `json:"clicked_at"`
 }
 
-// StatsSummary - агрегированные данные для дашборда
 type StatsSummary struct {
 	TotalClicks int64            `json:"total_clicks"`
 	ByCountry   map[string]int64 `json:"by_country"`
 	ByDevice    map[string]int64 `json:"by_device"`
+	ByBrowser   map[string]int64 `json:"by_browser"`
+}
+
+type ClickByDay struct {
+	Day    time.Time `json:"day"`
+	Clicks int64     `json:"clicks"`
+}
+
+type LinkStats struct {
+	LinkID      int              `json:"link_id"`
+	ShortCode   string           `json:"short_code"`
+	OriginalURL string           `json:"original_url"`
+	CreatedAt   time.Time        `json:"created_at"`
+	TotalClicks int64            `json:"total_clicks"`
+	ClicksByDay []ClickByDay     `json:"clicks_by_day"`
+	ByCountry   map[string]int64 `json:"by_country"`
 }

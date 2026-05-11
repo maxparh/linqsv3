@@ -8,9 +8,8 @@ type AuthTokens struct {
 	ExpiresIn   int    `json:"expires_in"`
 }
 
-// Claims теперь встраивает jwt.RegisteredClaims, что реализует интерфейс jwt.Claims
 type Claims struct {
 	UserID               int    `json:"user_id"`
 	Email                string `json:"email"`
-	jwt.RegisteredClaims        // Встраивание стандартных полей (exp, iat, sub и т.д.)
+	jwt.RegisteredClaims       
 }

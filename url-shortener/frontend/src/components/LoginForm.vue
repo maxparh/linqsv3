@@ -1,11 +1,4 @@
 <template>
-  <ToastNotification
-  :show="toastShow"
-  :title="toastTitle"
-  :message="toastMessage"
-  :duration="3000"
-  @close="toastShow = false"
-  />
   <form @submit.prevent="handleSubmit" class="space-y-4">
     <div>
       <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5">Email</label>
@@ -48,6 +41,15 @@
       Войти
     </button>
   </form>
+
+  <ToastNotification
+    :show="toastShow"
+    :title="toastTitle"
+    :message="toastMessage"
+    :duration="3000"
+    type="error"
+    @close="toastShow = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -85,7 +87,7 @@ const form = reactive({
 const handleLogin = async () => {
   try {
 
-    const response = await fetch(`${API_URL}/api/login`, {
+    const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
