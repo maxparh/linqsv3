@@ -10,9 +10,12 @@ RUN npm ci
 # Копируем весь исходный код (нужен для Tailwind JIT)
 COPY . .
 
-# Передаем переменную окружения для API URL
+# 🔥 Передаём переменные окружения для Vite
 ARG VITE_API_BASE_URL=/
+ARG VITE_SHORT_LINK_DOMAIN=http://localhost
+
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_SHORT_LINK_DOMAIN=${VITE_SHORT_LINK_DOMAIN}
 
 # Собираем проект
 RUN npm run build

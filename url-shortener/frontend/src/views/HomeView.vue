@@ -211,6 +211,7 @@ import ToastNotification from '@/components/ToastNotification.vue'
 
 // 🔥 Используем переменную окружения вместо хардкода
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const SHORT_LINK_DOMAIN = import.meta.env.VITE_SHORT_LINK_DOMAIN
 const router = useRouter()
 
 // Состояние UI
@@ -286,7 +287,8 @@ const fetchLinks = async () => {
     }
     links.value = data?.map((item: any) => ({
       id: item.id,
-      shortUrl: `${API_URL}/${item.short_code}`,
+      // 🔥 Формируем публичную ссылку без /api
+      shortUrl: `${SHORT_LINK_DOMAIN}/${item.short_code}`,
       originalUrl: item.original_url?.replace(/^https?:\/\//, '') || '',
       clicks: '0',
       growth: 0,
@@ -323,7 +325,7 @@ const handleShorten = async () => {
     // 🔥 Бэкенд возвращает JSON, а не текст
     const data = await response.json()
     const shortCode = data.short_code
-    const shortUrl = `${API_URL}/${shortCode}`
+    const shortUrl = `${SHORT_LINK_DOMAIN}/${shortCode}`
 
     createdLink.value = shortUrl
     showLinkPopup.value = true

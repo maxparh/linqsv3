@@ -52,7 +52,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${API_BASE_URL}
+        # 🔥 Передаём обе переменные в сборку
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_SHORT_LINK_DOMAIN: ${VITE_SHORT_LINK_DOMAIN:-http://localhost}
+    environment:
+      # 🔥 Дублируем для Vite (он читает env переменные при npm run build)
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+      - VITE_SHORT_LINK_DOMAIN=${VITE_SHORT_LINK_DOMAIN:-http://localhost}
     container_name: url-shortener-web
     ports:
       - "80:80"

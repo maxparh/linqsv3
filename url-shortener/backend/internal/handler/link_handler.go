@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 	"url-shortener/internal/domain"
-	"url-shortener/internal/service"
 	"url-shortener/internal/middleware"
+	"url-shortener/internal/service"
 )
 
 type LinkHandler struct {
@@ -170,12 +170,12 @@ func (h *LinkHandler) recordClick(ctx context.Context, linkID int, r *http.Reque
 	// Создаём объект клика с полями, соответствующими БД
 	stat := &domain.ClickStat{
 		LinkID:      linkID,
-		IPAddress:   ipHash,         // SHA256 хэш (64 символа)
+		IPAddress:   ipHash, // SHA256 хэш (64 символа)
 		UserAgent:   ua,
-		CountryCode: "RU",           // ← Поле как в БД: country_code
+		CountryCode: "RU", // ← Поле как в БД: country_code
 		DeviceType:  deviceType,
-		BrowserName: browser,        // ← Поле как в БД: browser_name
-		ClickedAt:   time.Time{},    // Zero value → БД подставит NOW()
+		BrowserName: browser,     // ← Поле как в БД: browser_name
+		ClickedAt:   time.Time{}, // Zero value → БД подставит NOW()
 	}
 
 	// Записываем клик (игнорируем ошибку, чтобы не ломать редирект)
