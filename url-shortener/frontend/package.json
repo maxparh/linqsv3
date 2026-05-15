@@ -17,10 +17,13 @@
   "dependencies": {
     "echarts": "^6.0.0",
     "pinia": "^3.0.4",
+    "sortablejs": "^1.15.7",
     "vue": "^3.5.31",
+    "vue-draggable-next": "^2.3.0",
     "vue-echarts": "^8.0.1",
     "vue-router": "^5.0.4",
-    "vue-tel-input": "^9.8.0"
+    "vue-tel-input": "^9.8.0",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

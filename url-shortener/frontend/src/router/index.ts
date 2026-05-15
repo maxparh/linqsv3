@@ -3,6 +3,7 @@ import AuthView from '@/views/AuthView.vue'
 import HomeView from '@/views/HomeView.vue'
 import LinksView from '@/views/LinksView.vue'
 import ShortLinkView from '@/views/ShortLinkView.vue'
+import AnalyticsView from '@/views/AnalyticsView.vue'
 
 const isAuthenticated = true
 
@@ -21,6 +22,12 @@ const routes = [
     path: '/links',
     name: 'links',
     component: isAuthenticated ? LinksView : () => import('@/views/UnauthorizedView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics',
+    name: 'analytics',
+    component: isAuthenticated ? AnalyticsView : () => import('@/views/UnauthorizedView.vue'),
     meta: { requiresAuth: true }
   },
   {
