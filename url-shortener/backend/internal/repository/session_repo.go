@@ -136,13 +136,16 @@ func (r *postgresSessionRepo) RecordSession(ctx context.Context, linkID int, ses
 
 func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, days int) (*domain.AnalyticsOverview, error) {
 	var o domain.AnalyticsOverview
+
 	query := `
         SELECT 
-            COUNT(s.id),
-            COUNT(DISTINCT s.session_id),
-            COALESCE(AVG(s.total_time_on_site)::float, 0),
-            CASE WHEN COUNT(DISTINCT s.session_id) = 0 THEN 0 
-            ELSE COUNT(DISTINCT CASE WHEN s.is_bounce THEN s.session_id END) * 100.0 / COUNT(DISTINCT s.session_id) END
+            COALESCE(SUM(s.page_views), 0)::bigint as total_clicks,
+            COUNT(DISTINCT s.session_id)::bigint as unique_clicks,
+            COALESCE(AVG(s.total_time_on_site)::float, 0) as avg_time_on_site,
+            CASE 
+                WHEN COUNT(DISTINCT s.session_id) = 0 THEN 0 
+                ELSE COUNT(DISTINCT CASE WHEN s.is_bounce THEN s.session_id END) * 100.0 / COUNT(DISTINCT s.session_id) 
+            END as bounce_rate
         FROM analytics_sessions s
         JOIN links l ON s.link_id = l.id
         WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2)
@@ -153,7 +156,7 @@ func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, 
 
 func (r *postgresSessionRepo) GetClicksOverTime(ctx context.Context, userID int, days int) (*domain.ClicksOverTime, error) {
 	rows, err := r.db.QueryContext(ctx, `
-        SELECT to_char(s.started_at, 'DD.MM') as day, COUNT(*) 
+        SELECT to_char(s.started_at, 'DD.MM') as day, SUM(s.page_views) as clicks
         FROM analytics_sessions s
         JOIN links l ON s.link_id = l.id
         WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2)
@@ -168,7 +171,9 @@ func (r *postgresSessionRepo) GetClicksOverTime(ctx context.Context, userID int,
 	for rows.Next() {
 		var day string
 		var clicks int
-		rows.Scan(&day, &clicks)
+		if err := rows.Scan(&day, &clicks); err != nil {
+			return nil, err
+		}
 		res.Labels = append(res.Labels, day)
 		res.Values = append(res.Values, clicks)
 	}

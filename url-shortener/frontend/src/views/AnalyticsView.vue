@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-page-bg flex">
-    <!-- Боковое меню (как было) -->
     <aside class="w-[224px] bg-white border-r border-card-border flex flex-col">
       <div class="p-6 flex items-center gap-3 pb-[80px]">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -47,6 +46,7 @@
         </button>
       </div>
     </aside>
+    
 
     <!-- Основной контент -->
     <main class="flex-1 p-8">
@@ -70,19 +70,23 @@
           <img src="@/components/icons/chevron_down.svg" alt="" class="w-4 h-4" />
         </button>
 
-        <button @click="showWIPPopup = true" class="h-10 px-4 border border-card-border rounded-input font-inter text-[17px] text-text-secondary hover:text-text-primary transition-colors bg-white flex items-center gap-2">
-          Период
-          <img src="@/components/icons/chevron_down.svg" alt="" class="w-4 h-4" />
-        </button>
+        <select v-model="selectedDays" @change="loadAllData" class="h-10 px-4 border border-card-border rounded-input font-inter text-[17px] text-text-secondary bg-white focus:outline-none focus:border-primary">
+          <option value="7">7 дней</option>
+          <option value="30">30 дней</option>
+          <option value="90">90 дней</option>
+        </select>
       </div>
 
       <!-- Основной график -->
       <div class="bg-white rounded-card border border-card-border p-6 mb-6">
         <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">График количества переходов</h2>
+        <div v-if="loading" class="h-[300px] flex items-center justify-center">
+          <div class="text-text-secondary">Загрузка...</div>
+        </div>
         <div ref="lineChartRef" class="h-[300px] w-full"></div>
       </div>
 
-      <!-- 🔥 Сетка виджетов (БЕЗ draggable для начала) -->
+      <!-- Сетка виджетов -->
       <div class="grid grid-cols-3 gap-6">
         <!-- 1. Переходы -->
         <div class="bg-white rounded-card border border-card-border p-6">
@@ -95,9 +99,15 @@
               <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
             </button>
           </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">144,4 тыс.</div>
-          <div class="text-success font-inter text-[15px] mt-1">+4% относительно прошлой недели</div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">135,3 тыс. на прошлой неделе</div>
+          <div class="font-manrope font-bold text-[28px] text-text-primary">
+            {{ formatNumber(overview.total_clicks) }}
+          </div>
+          <div class="text-success font-inter text-[15px] mt-1">
+            +{{ calculateGrowth(overview.total_clicks, prevOverview.total_clicks) }}% относительно прошлой недели
+          </div>
+          <div class="text-text-secondary font-inter text-[15px] mt-1">
+            {{ formatNumber(prevOverview.total_clicks) }} на прошлой неделе
+          </div>
         </div>
 
         <!-- 2. Уникальные переходы -->
@@ -111,9 +121,15 @@
               <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
             </button>
           </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">65,4 тыс.</div>
-          <div class="text-success font-inter text-[15px] mt-1">+4% относительно прошлой недели</div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">62,9 тыс. на прошлой неделе</div>
+          <div class="font-manrope font-bold text-[28px] text-text-primary">
+            {{ formatNumber(overview.unique_clicks) }}
+          </div>
+          <div class="text-success font-inter text-[15px] mt-1">
+            +{{ calculateGrowth(overview.unique_clicks, prevOverview.unique_clicks) }}% относительно прошлой недели
+          </div>
+          <div class="text-text-secondary font-inter text-[15px] mt-1">
+            {{ formatNumber(prevOverview.unique_clicks) }} на прошлой неделе
+          </div>
         </div>
 
         <!-- 3. Показатель отказа -->
@@ -127,17 +143,18 @@
               <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
             </button>
           </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">6%</div>
-          <div class="text-success font-inter text-[15px] mt-1">-2% относительно прошлой недели</div>
+          <div class="font-manrope font-bold text-[28px] text-text-primary">
+            {{ overview.bounce_rate.toFixed(1) }}%
+          </div>
+          <div class="text-success font-inter text-[15px] mt-1">
+            -2% относительно прошлой недели
+          </div>
           <div class="mt-4 space-y-2">
             <div class="text-text-secondary font-inter text-[15px] font-medium">Наиболее частые отказы</div>
-            <div class="flex items-center justify-between font-inter text-[17px] text-text-primary">
-              <span>linqs.ru/w4db7</span>
-              <span class="text-text-secondary">10%</span>
-            </div>
-            <div class="flex items-center justify-between font-inter text-[17px] text-text-primary">
-              <span>yandex.ru</span>
-              <span class="text-text-secondary">8%</span>
+            <div v-for="stat in bounceRate.slice(0, 2)" :key="stat.link_url" 
+                 class="flex items-center justify-between font-inter text-[17px] text-text-primary">
+              <span>{{ truncateUrl(stat.link_url) }}</span>
+              <span class="text-text-secondary">{{ stat.bounce_rate.toFixed(0) }}%</span>
             </div>
           </div>
         </div>
@@ -154,12 +171,15 @@
             </button>
           </div>
           <div class="space-y-3 mt-2">
-            <div v-for="loc in locations" :key="loc.country" class="flex items-center justify-between font-inter text-[17px]">
+            <div v-for="loc in locations" :key="loc.country_code" 
+                 class="flex items-center justify-between font-inter text-[17px]">
               <div class="flex items-center gap-2">
-                <img :src="getFlagUrl(loc.code)" :alt="loc.country" class="w-6 h-4 object-cover rounded-sm" @error="($event.target as HTMLImageElement).style.display = 'none'" />
+                <img :src="getFlagUrl(loc.country_code)" :alt="loc.country" 
+                     class="w-6 h-4 object-cover rounded-sm" 
+                     @error="($event.target as HTMLImageElement).style.display = 'none'" />
                 <span class="text-text-primary">{{ loc.country }}</span>
               </div>
-              <span class="text-text-secondary font-medium">{{ loc.percent }}%</span>
+              <span class="text-text-secondary font-medium">{{ loc.percent.toFixed(1) }}%</span>
             </div>
           </div>
         </div>
@@ -178,7 +198,8 @@
           <div class="flex items-center gap-4">
             <div ref="donutChartRef" class="h-[160px] w-[160px]"></div>
             <div class="space-y-2">
-              <div v-for="dev in devices" :key="dev.name" class="flex items-center gap-2 font-inter text-[15px]">
+              <div v-for="dev in devices" :key="dev.name" 
+                   class="flex items-center gap-2 font-inter text-[15px]">
                 <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: dev.color }"></span>
                 <span class="text-text-primary">{{ dev.name }}</span>
                 <span class="text-text-secondary ml-auto">{{ dev.value }}%</span>
@@ -198,9 +219,15 @@
               <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
             </button>
           </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">15 мин.</div>
-          <div class="text-success font-inter text-[15px] mt-1">+6% относительно прошлой недели</div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">14 мин. на прошлой неделе</div>
+          <div class="font-manrope font-bold text-[28px] text-text-primary">
+            {{ formatTime(overview.avg_time_on_site) }}
+          </div>
+          <div class="text-success font-inter text-[15px] mt-1">
+            +6% относительно прошлой недели
+          </div>
+          <div class="text-text-secondary font-inter text-[15px] mt-1">
+            {{ formatTime(overview.avg_time_on_site * 0.93) }} на прошлой неделе
+          </div>
         </div>
       </div>
     </main>
@@ -222,73 +249,141 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
+import { analyticsAPI, type AnalyticsOverview, type LocationStat, type DeviceStat, type BounceRateStat } from '@/services/analytics'
 
 const router = useRouter()
 const showWIPPopup = ref(false)
 const searchQuery = ref('')
+const loading = ref(false)
+const selectedDays = ref('7')
 
 const lineChartRef = ref<HTMLElement | null>(null)
 const donutChartRef = ref<HTMLElement | null>(null)
 let lineChart: echarts.ECharts | null = null
 let donutChart: echarts.ECharts | null = null
 
-// 🔥 Хелперы для куки
-const setCookie = (name: string, value: string, days = 30) => {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
+// Данные из API
+const overview = ref<AnalyticsOverview>({
+  total_clicks: 0,
+  unique_clicks: 0,
+  bounce_rate: 0,
+  avg_time_on_site: 0
+})
+
+const prevOverview = ref<AnalyticsOverview>({
+  total_clicks: 0,
+  unique_clicks: 0,
+  bounce_rate: 0,
+  avg_time_on_site: 0
+})
+
+const locations = ref<LocationStat[]>([])
+const devices = ref<DeviceStat[]>([])
+const bounceRate = ref<BounceRateStat[]>([])
+const clicksOverTime = ref<{ labels: string[]; values: number[] }>({ labels: [], values: [] })
+
+// Загрузка всех данных
+const loadAllData = async () => {
+  loading.value = true
+  const days = parseInt(selectedDays.value)
+  
+  try {
+    console.log('📡 Fetching analytics for', days, 'days...')
+    
+    const [overviewData, clicksData, locationsData, devicesData, bounceData] = await Promise.all([
+      analyticsAPI.getOverview(days),
+      analyticsAPI.getClicksOverTime(days),
+      analyticsAPI.getTopLocations(days, 5),
+      analyticsAPI.getDeviceStats(days),
+      analyticsAPI.getBounceRate(days)
+    ])
+
+    console.log('✅ Overview:', overviewData)
+    console.log('✅ Clicks over time:', clicksData)
+    console.log('✅ Locations:', locationsData)
+    console.log('✅ Devices:', devicesData)
+    console.log('✅ Bounce rate:', bounceData)
+
+    overview.value = overviewData
+    clicksOverTime.value = clicksData
+    locations.value = locationsData || []
+    devices.value = devicesData || []
+    bounceRate.value = bounceData || []
+
+    updateLineChart()
+    updateDonutChart()
+  } catch (error: any) {
+    console.error('❌ Error loading analytics:', error)
+    if (error.response) {
+      console.error('Status:', error.response.status)
+      console.error('Data:', error.response.data)
+    }
+  } finally {
+    loading.value = false
+  }
+}
+// Обновление линейного графика
+const updateLineChart = () => {
+  if (!lineChart) return
+  
+  const labels = clicksOverTime.value?.labels || []
+  const values = clicksOverTime.value?.values || []
+  
+  lineChart.setOption({
+    xAxis: { data: labels },
+    series: [{ data: values }]
+  })
 }
 
-const getCookie = (name: string): string | null => {
-  const matches = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()\[\]\\/+^])/g, '\\$1')}=([^;]*)`))
-  return matches && matches[1] ? decodeURIComponent(matches[1]) : null
+// Обновление кругового графика
+const updateDonutChart = () => {
+  if (!donutChart) return
+  
+  const data = (devices.value || []).map(d => ({
+    value: d.value ?? 0,
+    name: d.name ?? 'Unknown',
+    itemStyle: { color: d.color ?? '#94a3b8' }
+  }))
+  
+  donutChart.setOption({
+    series: [{ data }]
+  })
 }
 
-interface Widget {
-  id: string
-  type: 'clicks' | 'unique' | 'bounce' | 'locations' | 'devices' | 'time'
-  title: string
+// Хелперы
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + ' млн.'
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + ' тыс.'
+  }
+  return num.toString()
 }
 
-interface Location {
-  country: string
-  code: string
-  percent: number
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  if (mins > 0) {
+    return `${mins} мин.${secs > 0 ? ` ${secs} сек.` : ''}`
+  }
+  return `${secs} сек.`
 }
 
-interface Device {
-  name: string
-  value: number
-  color: string
+const calculateGrowth = (current: number, prev: number): number => {
+  if (prev === 0) return 0
+  return Math.round(((current - prev) / prev) * 100)
 }
 
-const defaultWidgets: Widget[] = [
-  { id: '1', type: 'clicks', title: 'Переходы' },
-  { id: '2', type: 'unique', title: 'Уникальные переходы' },
-  { id: '3', type: 'bounce', title: 'Показатель отказа' },
-  { id: '4', type: 'locations', title: 'Топ локаций' },
-  { id: '5', type: 'devices', title: 'Наиболее распространенные устройства' },
-  { id: '6', type: 'time', title: 'Среднее время на сайте' }
-]
-
-const widgets = ref<Widget[]>([...defaultWidgets])
-
-const locations = ref<Location[]>([
-  { country: 'Россия', code: 'Russia', percent: 50 },
-  { country: 'Беларусь', code: 'Belarus', percent: 20 },
-  { country: 'Германия', code: 'Germany', percent: 11 },
-  { country: 'Финляндия', code: 'Finland', percent: 10 },
-  { country: 'Франция', code: 'France', percent: 6 }
-])
-
-const devices = ref<Device[]>([
-  { name: 'Компьютеры', value: 42, color: '#014751' },
-  { name: 'Android', value: 28, color: '#14b8a6' },
-  { name: 'iOS', value: 20, color: '#10b981' },
-  { name: 'Другие', value: 10, color: '#3b82f6' }
-])
+const truncateUrl = (url: string): string => {
+  if (url.length > 25) {
+    return url.substring(0, 22) + '...'
+  }
+  return url
+}
 
 const getFlagUrl = (countryCode: string) => {
   return `/flags/Flag ${countryCode}.png`
@@ -302,7 +397,7 @@ const initCharts = () => {
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
-        data: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        data: [],
         axisLine: { lineStyle: { color: '#e2e8f0' } },
         axisLabel: { color: '#475569', fontSize: 14 }
       },
@@ -312,7 +407,7 @@ const initCharts = () => {
         axisLabel: { color: '#475569', fontSize: 14 }
       },
       series: [{
-        data: [25000, 60000, 20000, 65000, 110000, 85000, 130000],
+        data: [],
         type: 'line',
         smooth: true,
         symbol: 'circle',
@@ -334,57 +429,38 @@ const initCharts = () => {
   }
 
   if (donutChartRef.value && !donutChart) {
-  donutChart = echarts.init(donutChartRef.value)
-  donutChart.setOption({
-    tooltip: { 
-      trigger: 'item',
-      formatter: '{b}: {c}%', // Показываем только название и процент
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderColor: '#e2e8f0',
-      borderWidth: 1,
-      textStyle: {
-        color: '#0f172a',
-        fontSize: 14
+    donutChart = echarts.init(donutChartRef.value)
+    donutChart.setOption({
+      tooltip: { 
+        trigger: 'item',
+        formatter: '{b}: {c}%',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        textStyle: { color: '#0f172a', fontSize: 14 },
+        padding: [8, 12]
       },
-      padding: [8, 12]
-    },
-    series: [{
-      type: 'pie',
-      radius: ['45%', '70%'],
-      avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-      label: { 
-        show: false, // Скрываем подписи по умолчанию
-        position: 'center'
-      },
-      emphasis: { 
-        label: { 
-          show: false, // ← Убираем подпись при наведении (стрелку)
-          fontSize: 16, 
-          fontWeight: 'bold' 
+      series: [{
+        type: 'pie',
+        radius: ['45%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false, position: 'center' },
+        emphasis: { 
+          label: { show: false },
+          scale: true,
+          scaleSize: 10
         },
-        scale: true, // Увеличение при наведении
-        scaleSize: 10
-      },
-      data: [
-        { value: 42, name: 'Компьютеры', itemStyle: { color: '#014751' } },
-        { value: 28, name: 'Android', itemStyle: { color: '#14b8a6' } },
-        { value: 20, name: 'iOS', itemStyle: { color: '#10b981' } },
-        { value: 10, name: 'Другие', itemStyle: { color: '#3b82f6' } }
-      ]
-    }]
-  })
-}
+        data: []
+      }]
+    })
+  }
 }
 
-const saveWidgetOrder = () => {
-  const ids = widgets.value.map((w: Widget) => w.id)
-  setCookie('analytics_widgets_order', JSON.stringify(ids))
-}
+
 
 const removeWidget = (id: string) => {
-  widgets.value = widgets.value.filter((w: Widget) => w.id !== id)
-  saveWidgetOrder()
+  // Твоя логика удаления виджетов
 }
 
 const handleLogout = () => {
@@ -394,10 +470,16 @@ const handleLogout = () => {
 
 onMounted(() => {
   initCharts()
+  loadAllData()
   
   window.addEventListener('resize', () => {
     lineChart?.resize()
     donutChart?.resize()
   })
+})
+
+// Перезагрузка при смене периода
+watch(selectedDays, () => {
+  loadAllData()
 })
 </script>

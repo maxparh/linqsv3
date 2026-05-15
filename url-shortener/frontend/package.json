@@ -15,6 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "axios": "^1.16.1",
     "echarts": "^6.0.0",
     "pinia": "^3.0.4",
     "sortablejs": "^1.15.7",
