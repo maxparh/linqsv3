@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 	"url-shortener/internal/domain"
 	"url-shortener/internal/middleware"
+	"url-shortener/internal/repository"
 	"url-shortener/internal/service"
 )
 
@@ -180,4 +182,40 @@ func (h *LinkHandler) recordClick(ctx context.Context, linkID int, r *http.Reque
 
 	// Записываем клик (игнорируем ошибку, чтобы не ломать редирект)
 	_ = h.analyticsService.RecordClick(context.Background(), stat)
+}
+
+func (h *LinkHandler) DeleteLink(w http.ResponseWriter, r *http.Request) {
+	// Метод уже проверен на уровне роутера, но для надёжности:
+	if r.Method != http.MethodDelete {
+		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	// Достаём user_id из контекста (как у тебя уже сделано)
+	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "user not authenticated")
+		return
+	}
+
+	// 🔥 Go 1.22+: достаём параметр из пути через r.PathValue()
+	code := r.PathValue("code")
+	if code == "" {
+		WriteError(w, http.StatusBadRequest, "short code is required")
+		return
+	}
+
+	// Вызываем сервис
+	err := h.linkService.DeleteLink(r.Context(), userID, code)
+	if err != nil {
+		if errors.Is(err, repository.ErrLinkNotFound) {
+			WriteError(w, http.StatusNotFound, "link not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Успех — 204 No Content
+	w.WriteHeader(http.StatusNoContent)
 }

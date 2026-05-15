@@ -14,6 +14,7 @@ type LinkRepository interface {
 	Create(ctx context.Context, link *domain.Link) error
 	GetByCode(ctx context.Context, code string) (*domain.Link, error)
 	GetByUserID(ctx context.Context, userID int) ([]*domain.Link, error)
+	DeleteByCode(ctx context.Context, userID int, code string) error
 }
 
 type postgresLinkRepo struct {
@@ -71,4 +72,20 @@ func (r *postgresLinkRepo) GetByUserID(ctx context.Context, userID int) ([]*doma
 		links = append(links, &link)
 	}
 	return links, rows.Err()
+}
+
+func (r *postgresLinkRepo) DeleteByCode(ctx context.Context, userID int, code string) error {
+	query := `DELETE FROM links WHERE short_code = $1 AND user_id = $2`
+	result, err := r.db.ExecContext(ctx, query, code, userID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrLinkNotFound
+	}
+	return nil
 }

@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthView from '@/views/AuthView.vue'
 import HomeView from '@/views/HomeView.vue'
-import ShortLinkView from '@/views/ShortLinkView.vue' // ← Добавь импорт
+import LinksView from '@/views/LinksView.vue'
+import ShortLinkView from '@/views/ShortLinkView.vue'
 
 const isAuthenticated = true
 
@@ -16,8 +17,12 @@ const routes = [
     name: 'auth',
     component: AuthView,
   },
-  
-  // 🔥 ПОСЛЕДНИЙ: ловит короткие ссылки вида /mgnMyw
+  {
+    path: '/links',
+    name: 'links',
+    component: isAuthenticated ? LinksView : () => import('@/views/UnauthorizedView.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/:shortCode',
     name: 'ShortLink',

@@ -21,15 +21,15 @@
           Главная
         </router-link>
 
-        <!-- Неактивные -->
-        <button
-          @click="showWIPPopup = true"
+        <router-link
+          to="/links"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
         >
           <img src="@/components/icons/link_nav_nactive.svg" alt="" />
           Ссылки
-        </button>
+        </router-link>
 
+        <!-- Неактивные -->
         <button
           @click="showWIPPopup = true"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
@@ -134,20 +134,18 @@
 
               <div class="flex items-center gap-2">
                 <button
-                  class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
-                >
-                  <img src="@/components/icons/link_secondary.svg" alt="" />
-                </button>
-                <button
                   @click="copyLink(link.shortUrl)"
                   class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+                  title="Копировать ссылку"
                 >
                   <img src="@/components/icons/copy_secondary.svg" alt="" />
                 </button>
                 <button
-                  class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-primary transition-colors"
+                  @click="confirmDelete(link.shortUrl)"
+                  class="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-error transition-colors"
+                  title="Удалить ссылку"
                 >
-                  <img src="@/components/icons/edit_secondary.svg" alt="" />
+                  <img src="@/components/icons/delete.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -155,6 +153,34 @@
         </div>
       </div>
     </main>
+
+    <!-- 🔥 Попап подтверждения удаления -->
+    <ToastNotification
+      v-if="deleteConfirmShow"
+      :show="deleteConfirmShow"
+      title="Удалить ссылку?"
+      message="Это действие нельзя отменить"
+      type="confirm"
+      :show-actions="true"
+      :show-icon="true"
+      :buttons="[
+        { text: 'Отмена', variant: 'secondary', action: () => { deleteConfirmShow = false; linkCodeToDelete = null } },
+        { text: 'Удалить', variant: 'danger', action: handleDeleteConfirmed, closeAfter: true }
+      ]"
+      @close="deleteConfirmShow = false"
+    />
+
+    <!-- 🔥 Универсальный тост для уведомлений -->
+    <ToastNotification
+      v-if="toastShow && !deleteConfirmShow"
+      :show="toastShow"
+      :title="toastTitle"
+      :message="toastMessage"
+      :duration="3000"
+      :type="toastType"
+      :show-icon="true"
+      @close="toastShow = false"
+    />
 
     <!-- Попап создания ссылки -->
     <LinkCreatedPopup
@@ -166,15 +192,6 @@
     <!-- Попап ошибки -->
     <LinkErrorPopup v-if="showErrorPopup" :url="errorUrl" @close="showErrorPopup = false" />
 
-    <!-- Попап копирования -->
-    <ToastNotification
-      v-if="showToast"
-      :show="showToast"
-      title="Готово!"
-      message="Ссылка скопирована в буфер обмена"
-      @close="showToast = false"
-    />
-
     <!-- В разработке попап -->
     <div
       v-if="showWIPPopup"
@@ -182,9 +199,7 @@
       @click.self="showWIPPopup = false"
     >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
-        <div
-          class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center"
-        >
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center">
           <img src="@/components/icons/dev.svg" alt="" />
         </div>
         <h3 class="font-manrope font-bold text-[24px] text-text-primary mb-2">Упс!</h3>
@@ -209,18 +224,27 @@ import LinkCreatedPopup from '@/components/LinkCreatedPopup.vue'
 import LinkErrorPopup from '@/components/ErrorCreatedPopup.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
 
-// 🔥 Используем переменную окружения вместо хардкода
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const SHORT_LINK_DOMAIN = import.meta.env.VITE_SHORT_LINK_DOMAIN
+// 🔥 Базовые URL
+const API_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const SHORT_LINK_DOMAIN = import.meta.env.VITE_SHORT_LINK_DOMAIN || 'http://localhost'
+
 const router = useRouter()
 
-// Состояние UI
+// 🔥 Состояния UI (старые)
 const showWIPPopup = ref(false)
 const showLinkPopup = ref(false)
-const showToast = ref(false)
 const showErrorPopup = ref(false)
 const createdLink = ref('')
 const errorUrl = ref('')
+
+// 🔥 Состояния для ToastNotification
+const deleteConfirmShow = ref(false)
+const linkCodeToDelete = ref<string | null>(null)
+
+const toastShow = ref(false)
+const toastTitle = ref('')
+const toastMessage = ref('')
+const toastType = ref<'success' | 'error' | 'info'>('success')
 
 const newLink = reactive({
   url: '',
@@ -237,28 +261,87 @@ interface Link {
 
 const links = ref<Link[]>([])
 
-// Копирование ссылки
+// 🔥 Копирование ссылки
 const copyLink = async (shortUrl: string) => {
   try {
     await navigator.clipboard.writeText(shortUrl)
-    showToast.value = true
+    toastTitle.value = 'Готово!'
+    toastMessage.value = 'Ссылка скопирована в буфер обмена'
+    toastType.value = 'success'
+    toastShow.value = true
   } catch (err) {
     console.error('Failed to copy:', err)
+    toastTitle.value = 'Ошибка'
+    toastMessage.value = 'Не удалось скопировать ссылку'
+    toastType.value = 'error'
+    toastShow.value = true
   }
 }
 
-// Получение всех ссылок
-const fetchLinks = async () => {
+// 🔥 Показать попап подтверждения удаления
+const confirmDelete = (shortUrl: string) => {
+  const code = shortUrl.split('/').pop()
+  if (!code) return
+  linkCodeToDelete.value = code
+  deleteConfirmShow.value = true
+}
+
+// 🔥 Выполнить удаление после подтверждения
+const handleDeleteConfirmed = async () => {
+  const code = linkCodeToDelete.value
+  if (!code) return
+
   const token = localStorage.getItem('access_token')?.trim()
-  if (import.meta.env.DEV) {
-    console.log('🔑 Token:', token ? 'EXISTS' : 'NOT FOUND')
-  }
   if (!token) return router.push('/auth')
 
   try {
-    if (import.meta.env.DEV) {
-      console.log('📡 Sending request to /api/links...')
+    const response = await fetch(`${API_URL}/links/${code}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        toastTitle.value = 'Не найдено'
+        toastMessage.value = 'Ссылка уже удалена'
+      } else {
+        toastTitle.value = 'Ошибка'
+        toastMessage.value = 'Не удалось удалить ссылку'
+      }
+      toastType.value = 'error'
+      toastShow.value = true
+      return
     }
+
+    // ✅ Успех: удаляем из локального списка
+    links.value = links.value.filter(l => l.shortUrl.split('/').pop() !== code)
+
+    toastTitle.value = 'Удалено'
+    toastMessage.value = 'Ссылка успешно удалена'
+    toastType.value = 'success'
+    toastShow.value = true
+
+  } catch (err) {
+    console.error('💥 Network error on delete:', err)
+    toastTitle.value = 'Ошибка'
+    toastMessage.value = 'Не удалось удалить ссылку'
+    toastType.value = 'error'
+    toastShow.value = true
+  } finally {
+    linkCodeToDelete.value = null
+    deleteConfirmShow.value = false
+  }
+}
+
+// 🔥 Получение всех ссылок
+const fetchLinks = async () => {
+  const token = localStorage.getItem('access_token')?.trim()
+  if (!token) return router.push('/auth')
+
+  try {
     const response = await fetch(`${API_URL}/links`, {
       method: 'GET',
       headers: {
@@ -266,14 +349,8 @@ const fetchLinks = async () => {
         Authorization: `Bearer ${token}`,
       },
     })
-    if (import.meta.env.DEV) {
-      console.log('📥 Response status:', response.status)
-      console.log('📥 Response headers:', [...response.headers.entries()])
-    }
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ Error:', errorText)
       if (response.status === 401) {
         localStorage.removeItem('access_token')
         router.push('/auth')
@@ -282,12 +359,8 @@ const fetchLinks = async () => {
     }
 
     const data = await response.json()
-    if (import.meta.env.DEV) {
-      console.log('✅ Success! Links:', data)
-    }
     links.value = data?.map((item: any) => ({
       id: item.id,
-      // 🔥 Формируем публичную ссылку без /api
       shortUrl: `${SHORT_LINK_DOMAIN}/${item.short_code}`,
       originalUrl: item.original_url?.replace(/^https?:\/\//, '') || '',
       clicks: '0',
@@ -298,7 +371,7 @@ const fetchLinks = async () => {
   }
 }
 
-// Создание сокращенной ссылки
+// 🔥 Создание сокращенной ссылки
 const handleShorten = async () => {
   if (!newLink.url) return
 
@@ -312,7 +385,6 @@ const handleShorten = async () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      // 🔥 Бэкенд ожидает поле original_url
       body: JSON.stringify({ original_url: newLink.url }),
     })
 
@@ -322,15 +394,12 @@ const handleShorten = async () => {
       return
     }
 
-    // 🔥 Бэкенд возвращает JSON, а не текст
     const data = await response.json()
-    const shortCode = data.short_code
-    const shortUrl = `${SHORT_LINK_DOMAIN}/${shortCode}`
+    const shortUrl = `${SHORT_LINK_DOMAIN}/${data.short_code}`
 
     createdLink.value = shortUrl
     showLinkPopup.value = true
 
-    // Добавляем в локальный список для мгновенного отображения
     links.value.unshift({
       id: data.id || Date.now(),
       shortUrl,

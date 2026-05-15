@@ -46,18 +46,25 @@ func main() {
 	mux.HandleFunc("POST /api/register", authHandler.Register)
 	mux.HandleFunc("POST /api/login", authHandler.Login)
 
-	// Защищенные роуты
-	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("POST /api/links", linkHandler.CreateLink)
-	protectedMux.HandleFunc("GET /api/links", linkHandler.GetUserLinks)
-
-	// Middleware авторизации
+	// 🔥 Middleware авторизации
 	authMiddleware := middleware.NewAuthMiddleware(authService)
-	mux.Handle("/api/links", authMiddleware.RequireAuth(protectedMux))
 
-	mux.HandleFunc("GET /api/resolve/", linkHandler.ResolveLink)
+	mux.HandleFunc("GET /api/links", func(w http.ResponseWriter, r *http.Request) {
+		authMiddleware.RequireAuth(http.HandlerFunc(linkHandler.GetUserLinks)).ServeHTTP(w, r)
+	})
 
-	// Редиректы (должен быть в конце, ловит всё остальное)
+	mux.HandleFunc("POST /api/links", func(w http.ResponseWriter, r *http.Request) {
+		authMiddleware.RequireAuth(http.HandlerFunc(linkHandler.CreateLink)).ServeHTTP(w, r)
+	})
+
+	mux.HandleFunc("DELETE /api/links/{code}", func(w http.ResponseWriter, r *http.Request) {
+		authMiddleware.RequireAuth(http.HandlerFunc(linkHandler.DeleteLink)).ServeHTTP(w, r)
+	})
+
+	// Публичный эндпоинт для резолва
+	mux.HandleFunc("GET /api/resolve/{code}", linkHandler.ResolveLink)
+
+	// 🔥 Редиректы — ОБЯЗАТЕЛЬНО в конце, ловит всё остальное
 	mux.HandleFunc("/", linkHandler.Redirect)
 
 	// CORS Middleware

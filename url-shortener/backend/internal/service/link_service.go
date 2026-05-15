@@ -17,6 +17,7 @@ type LinkService interface {
 	CreateLink(ctx context.Context, userID int, req *domain.CreateLinkRequest, baseURL string) (*domain.LinkResponse, error)
 	GetLinkByCode(ctx context.Context, code string) (*domain.Link, error)
 	GetUserLinks(ctx context.Context, userID int) ([]*domain.Link, error)
+	DeleteLink(ctx context.Context, userID int, code string) error
 }
 
 type linkService struct {
@@ -95,4 +96,8 @@ func (s *linkService) GetLinkByCode(ctx context.Context, code string) (*domain.L
 
 func (s *linkService) GetUserLinks(ctx context.Context, userID int) ([]*domain.Link, error) {
 	return s.linkRepo.GetByUserID(ctx, userID)
+}
+
+func (s *linkService) DeleteLink(ctx context.Context, userID int, code string) error {
+	return s.linkRepo.DeleteByCode(ctx, userID, code)
 }
