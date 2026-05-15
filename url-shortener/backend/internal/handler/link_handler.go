@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,13 +19,16 @@ import (
 type LinkHandler struct {
 	linkService      service.LinkService
 	analyticsService service.AnalyticsService
+	sessionRepo      repository.SessionRepository
 	baseURL          string
 }
 
-func NewLinkHandler(linkService service.LinkService, analyticsService service.AnalyticsService, baseURL string) *LinkHandler {
+// 🔥 Конструктор с sessionRepo
+func NewLinkHandler(linkService service.LinkService, analyticsService service.AnalyticsService, sessionRepo repository.SessionRepository, baseURL string) *LinkHandler {
 	return &LinkHandler{
 		linkService:      linkService,
 		analyticsService: analyticsService,
+		sessionRepo:      sessionRepo, // ← Теперь работает
 		baseURL:          baseURL,
 	}
 }
@@ -122,15 +126,15 @@ func (h *LinkHandler) ResolveLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Асинхронно записываем клик (не блокируем ответ)
-	go h.recordClick(r.Context(), link.ID, r)
+	// Асинхронно записываем аналитику (не блокируем ответ)
+	go h.recordSession(r.Context(), link.ID, r)
 
 	WriteJSON(w, http.StatusOK, map[string]string{
 		"original_url": link.OriginalURL,
 	})
 }
 
-// Redirect — прямой редирект (для старых ссылок или если фронт не используется)
+// 🔥 ЕДИНЫЙ метод Redirect (удали дубликат!)
 // Путь: /{code}
 func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 	code := strings.TrimPrefix(r.URL.Path, "/")
@@ -139,73 +143,84 @@ func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 1. Ищем ссылку в БД
 	link, err := h.linkService.GetLinkByCode(r.Context(), code)
 	if err != nil {
+		log.Printf("⚠️ Link not found for code: %s", code)
 		http.NotFound(w, r)
 		return
 	}
 
-	go h.recordClick(r.Context(), link.ID, r)
+	log.Printf("🚀 Redirecting code: %s -> %s", code, link.OriginalURL)
+
+	// 2. Записываем аналитику АСИНХРОННО
+	// 🔥 ВАЖНО: используем context.Background(), иначе запись прервется после редиректа
+	go h.recordSession(context.Background(), link.ID, r)
+
+	// 3. Делаем редирект
 	http.Redirect(w, r, link.OriginalURL, http.StatusFound)
 }
 
-// recordClick — запись статистики клика
-func (h *LinkHandler) recordClick(ctx context.Context, linkID int, r *http.Request) {
-	// Устройство
-	deviceType := "desktop"
-	ua := r.UserAgent()
-	uaLower := strings.ToLower(ua)
-	if strings.Contains(uaLower, "mobile") || strings.Contains(uaLower, "android") || strings.Contains(uaLower, "iphone") {
-		deviceType = "mobile"
-	}
+// 🔥 recordSession — запись аналитики при переходе по ссылке
+func (h *LinkHandler) recordSession(ctx context.Context, linkID int, r *http.Request) {
+	// 🔥 Создаем НОВЫЙ контекст с таймаутом, независимый от запроса
+	recordCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// IP (с учётом прокси)
+	log.Printf("📝 [Async] Starting recordSession for linkID=%d...", linkID)
+
+	// 1. Получаем IP
 	ip := r.RemoteAddr
 	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
 		ip = strings.Split(forwarded, ",")[0]
 	}
 	ipHash := hashIP(strings.TrimSpace(ip))
 
-	// Браузер
-	browser := parseBrowser(ua)
-
-	// Создаём объект клика с полями, соответствующими БД
-	stat := &domain.ClickStat{
-		LinkID:      linkID,
-		IPAddress:   ipHash, // SHA256 хэш (64 символа)
-		UserAgent:   ua,
-		CountryCode: "RU", // ← Поле как в БД: country_code
-		DeviceType:  deviceType,
-		BrowserName: browser,     // ← Поле как в БД: browser_name
-		ClickedAt:   time.Time{}, // Zero value → БД подставит NOW()
+	// 2. UserAgent
+	ua := r.UserAgent()
+	deviceType := "desktop"
+	if strings.Contains(strings.ToLower(ua), "mobile") ||
+		strings.Contains(strings.ToLower(ua), "android") ||
+		strings.Contains(strings.ToLower(ua), "iphone") {
+		deviceType = "mobile"
 	}
+	browser := parseBrowser(ua)
+	country := "RU"
 
-	// Записываем клик (игнорируем ошибку, чтобы не ломать редирект)
-	_ = h.analyticsService.RecordClick(context.Background(), stat)
+	// 3. SessionID
+	sessionRaw := ipHash + ua
+	hash := sha256.Sum256([]byte(sessionRaw))
+	sessionID := fmt.Sprintf("%x", hash)
+
+	log.Printf("📝 [Async] Trying to INSERT into analytics_sessions...")
+
+	// 4. Пишем в БД с новым контекстом
+	err := h.sessionRepo.RecordSession(recordCtx, linkID, sessionID, ipHash, country, deviceType, browser)
+	if err != nil {
+		log.Printf("❌ [Async] DB Error: %v", err)
+	} else {
+		log.Println("✅ [Async] Session recorded successfully!")
+	}
 }
 
 func (h *LinkHandler) DeleteLink(w http.ResponseWriter, r *http.Request) {
-	// Метод уже проверен на уровне роутера, но для надёжности:
 	if r.Method != http.MethodDelete {
 		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
-	// Достаём user_id из контекста (как у тебя уже сделано)
 	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
 	if !ok {
 		WriteError(w, http.StatusUnauthorized, "user not authenticated")
 		return
 	}
 
-	// 🔥 Go 1.22+: достаём параметр из пути через r.PathValue()
 	code := r.PathValue("code")
 	if code == "" {
 		WriteError(w, http.StatusBadRequest, "short code is required")
 		return
 	}
 
-	// Вызываем сервис
 	err := h.linkService.DeleteLink(r.Context(), userID, code)
 	if err != nil {
 		if errors.Is(err, repository.ErrLinkNotFound) {
@@ -216,6 +231,5 @@ func (h *LinkHandler) DeleteLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Успех — 204 No Content
 	w.WriteHeader(http.StatusNoContent)
 }

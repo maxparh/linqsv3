@@ -26,21 +26,21 @@
           Ссылки
         </router-link>
 
-        <button
-          @click="showWIPPopup = true"
+        <router-link
+          to="/analytics"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
         >
           <img src="@/components/icons/analit_nav_nactive.svg" alt="" />
           Аналитика
-        </button>
+        </router-link>
 
-        <button
-          @click="showWIPPopup = true"
+        <router-link
+          to="/settings"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
         >
           <img src="@/components/icons/settings_nav_nactive.svg" alt="" />
           Настройки
-        </button>
+        </router-link>
       </nav>
 
       <div class="p-4 border-t border-card-border">

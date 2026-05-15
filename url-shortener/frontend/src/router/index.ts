@@ -4,10 +4,17 @@ import HomeView from '@/views/HomeView.vue'
 import LinksView from '@/views/LinksView.vue'
 import ShortLinkView from '@/views/ShortLinkView.vue'
 import AnalyticsView from '@/views/AnalyticsView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 
 const isAuthenticated = true
 
 const routes = [
+  {
+    path: '/cookie-policy',
+    name: 'CookiePolicy',
+    component: () => import('@/views/CookiePolicyView.vue'),
+    meta: { requiresAuth: false } // публичная страница
+  },
   {
     path: '/',
     name: 'home',
@@ -28,6 +35,12 @@ const routes = [
     path: '/analytics',
     name: 'analytics',
     component: isAuthenticated ? AnalyticsView : () => import('@/views/UnauthorizedView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: isAuthenticated ? SettingsView : () => import('@/views/UnauthorizedView.vue'),
     meta: { requiresAuth: true }
   },
   {

@@ -5,12 +5,18 @@ import "time"
 type ClickStat struct {
 	ID          int       `json:"id"`
 	LinkID      int       `json:"link_id"`
-	IPAddress   string    `json:"-"`             
+	IPAddress   string    `json:"-"`
 	UserAgent   string    `json:"user_agent"`
-	CountryCode string    `json:"country_code"`   
+	CountryCode string    `json:"country_code"`
 	DeviceType  string    `json:"device_type"`
-	BrowserName string    `json:"browser_name"`  
+	BrowserName string    `json:"browser_name"`
 	ClickedAt   time.Time `json:"clicked_at"`
+
+	SessionID      string    `json:"session_id"`
+	PageViews      int       `json:"page_views"`
+	TimeOnSite     int       `json:"time_on_site"`
+	IsBounce       bool      `json:"is_bounce"`
+	LastActivityAt time.Time `json:"last_activity_at"`
 }
 
 type StatsSummary struct {
