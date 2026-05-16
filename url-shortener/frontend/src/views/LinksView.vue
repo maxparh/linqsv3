@@ -64,7 +64,7 @@
     <main class="flex-1 p-8" @click="showDropdownId = null">
       <div class="mb-8">
         <h1 class="font-manrope font-bold text-[32px] text-text-primary mb-6">Ссылки</h1>
-        
+
         <div class="flex items-center gap-4 mb-6">
           <!-- Поиск с белым фоном -->
           <div class="flex-1 relative">
@@ -74,7 +74,11 @@
               placeholder="Начните вводить ссылку"
               class="w-full h-10 pl-10 pr-4 border border-card-border rounded-input font-inter text-[17px] text-text-primary placeholder:text-placeholder focus:outline-none focus:border-primary transition-colors bg-white"
             />
-            <img src="@/components/icons/search.svg" alt="" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none opacity-50" />
+            <img
+              src="@/components/icons/search.svg"
+              alt=""
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none opacity-50"
+            />
           </div>
 
           <button
@@ -100,45 +104,96 @@
             <thead class="bg-page-bg border-b border-card-border">
               <tr>
                 <th class="w-12 px-4 py-3">
-                  <input type="checkbox" class="w-4 h-4 rounded border-card-border" @change="toggleSelectAll" :checked="selectedLinks.length > 0 && selectedLinks.length === paginatedLinks.length" />
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-card-border"
+                    @change="toggleSelectAll"
+                    :checked="selectedLinks.length > 0 && selectedLinks.length === paginatedLinks.length"
+                  />
                 </th>
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">Ссылки</th>
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary cursor-pointer hover:text-text-primary select-none" @click.stop="toggleSort('createdAt')">
-                <div class="flex items-center gap-1">
+                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">
+                  Ссылки
+                </th>
+                <th
+                  class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary cursor-pointer hover:text-text-primary select-none"
+                  @click.stop="toggleSort('createdAt')"
+                >
+                  <div class="flex items-center gap-1">
                     Дата создания
                     <div class="flex flex-col gap-0.1">
-                    <img :src="chevronUpIcon" alt="" class="w-5 h-5" :class="sortField === 'createdAt' && sortDirection === 'asc' ? 'text-primary' : 'opacity-30'"/>
-                    <img :src="chevronDownIcon" alt="" class="w-5 h-5" :class="sortField === 'createdAt' && sortDirection === 'desc' ? 'text-primary' : 'opacity-30'"/>
+                      <img
+                        :src="chevronUpIcon"
+                        alt=""
+                        class="w-5 h-5"
+                        :class="sortField === 'createdAt' && sortDirection === 'asc' ? 'text-primary' : 'opacity-30'"
+                      />
+                      <img
+                        :src="chevronDownIcon"
+                        alt=""
+                        class="w-5 h-5"
+                        :class="sortField === 'createdAt' && sortDirection === 'desc' ? 'text-primary' : 'opacity-30'"
+                      />
                     </div>
-                </div>
+                  </div>
                 </th>
 
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary cursor-pointer hover:text-text-primary select-none" @click.stop="toggleSort('expiresAt')">
-                <div class="flex items-center gap-1">
+                <th
+                  class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary cursor-pointer hover:text-text-primary select-none"
+                  @click.stop="toggleSort('expiresAt')"
+                >
+                  <div class="flex items-center gap-1">
                     Действует до
                     <div class="flex flex-col gap-0.1">
-                    <img :src="chevronUpIcon" alt="" class="w-5 h-5" :class="sortField === 'expiresAt' && sortDirection === 'asc' ? 'text-primary' : 'opacity-30'"/>
-                    <img :src="chevronDownIcon" alt="" class="w-5 h-5" :class="sortField === 'expiresAt' && sortDirection === 'desc' ? 'text-primary' : 'opacity-30'"/>
+                      <img
+                        :src="chevronUpIcon"
+                        alt=""
+                        class="w-5 h-5"
+                        :class="sortField === 'expiresAt' && sortDirection === 'asc' ? 'text-primary' : 'opacity-30'"
+                      />
+                      <img
+                        :src="chevronDownIcon"
+                        alt=""
+                        class="w-5 h-5"
+                        :class="sortField === 'expiresAt' && sortDirection === 'desc' ? 'text-primary' : 'opacity-30'"
+                      />
                     </div>
-                </div>
+                  </div>
                 </th>
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">Приватность</th>
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">Комментарий</th>
-                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">Действия</th>
+                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">
+                  Приватность
+                </th>
+                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">
+                  Комментарий
+                </th>
+                <th class="text-left px-4 py-3 font-inter text-[17px] font-medium text-text-secondary">
+                  Действия
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="link in paginatedLinks" :key="link.id" class="border-b border-card-border last:border-0 hover:bg-page-bg/30 transition-colors">
+              <tr
+                v-for="link in paginatedLinks"
+                :key="link.id"
+                class="border-b border-card-border last:border-0 hover:bg-page-bg/30 transition-colors"
+              >
                 <td class="px-4 py-3">
-                  <input type="checkbox" class="w-4 h-4 rounded border-card-border" :checked="selectedLinks.includes(link.id)" @change.stop="toggleSelect(link.id)" />
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-card-border"
+                    :checked="selectedLinks.includes(link.id)"
+                    @change.stop="toggleSelect(link.id)"
+                  />
                 </td>
-                
+
                 <!-- Ссылка + копировать -->
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
                     <span class="font-inter text-[17px] font-medium text-text-primary">{{ link.shortUrl }}</span>
-                    <button @click.stop="copyLink(link.shortUrl)" class="text-text-secondary hover:text-primary transition-colors p-1">
-                      <img src="@/components/icons/copy.svg" alt=""/>
+                    <button
+                      @click.stop="copyLink(link.shortUrl)"
+                      class="text-text-secondary hover:text-primary transition-colors p-1"
+                    >
+                      <img src="@/components/icons/copy.svg" alt="" />
                     </button>
                   </div>
                   <div class="font-inter text-[13px] text-text-secondary mt-0.5 truncate max-w-[250px]">
@@ -146,38 +201,54 @@
                   </div>
                 </td>
 
-                <td class="px-4 py-3 font-inter text-[17px] text-text-primary whitespace-nowrap">{{ formatDate(link.createdAt) }}</td>
-                <td class="px-4 py-3 font-inter text-[17px] text-text-primary whitespace-nowrap">{{ link.expiresAt ? formatDate(link.expiresAt) : '—' }}</td>
-                
+                <td class="px-4 py-3 font-inter text-[17px] text-text-primary whitespace-nowrap">
+                  {{ formatDate(link.createdAt) }}
+                </td>
+                <td class="px-4 py-3 font-inter text-[17px] text-text-primary whitespace-nowrap">
+                  {{ link.expiresAt ? formatDate(link.expiresAt) : '—' }}
+                </td>
+
                 <!-- Приватность -->
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
-                    <button @click.stop="togglePrivacy(link.id)" class="w-10 h-5 rounded-full transition-colors relative" :class="link.isPrivate ? 'bg-primary' : 'bg-card-border'">
-                      <div class="w-4 h-4 bg-white rounded-full shadow-sm transition-transform absolute top-0.5" :class="link.isPrivate ? 'translate-x-5' : 'translate-x-0.5'" />
+                    <button
+                      @click.stop="togglePrivacy(link.id)"
+                      class="w-10 h-5 rounded-full transition-colors relative"
+                      :class="link.isPrivate ? 'bg-primary' : 'bg-card-border'"
+                    >
+                      <div
+                        class="w-4 h-4 bg-white rounded-full shadow-sm transition-transform absolute top-0.5"
+                        :class="link.isPrivate ? 'translate-x-5' : 'translate-x-0.5'"
+                      />
                     </button>
-                    <img :src="link.isPrivate ? lockedIcon : lockIcon" alt=""/>
+                    <img :src="link.isPrivate ? lockedIcon : lockIcon" alt="" />
                   </div>
                 </td>
 
                 <!-- Комментарий + редактировать -->
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
-                    <span class="font-inter text-[17px] text-text-primary truncate max-w-[180px]">{{ link.comment || '—' }}</span>
-                    <button @click.stop="editComment(link.id)" class="text-text-secondary hover:text-primary transition-colors p-1">
-                      <img src="@/components/icons/edit.svg" alt=""/>
+                    <span class="font-inter text-[17px] text-text-primary truncate max-w-[180px]">{{
+                      link.comment || '—'
+                    }}</span>
+                    <button
+                      @click.stop="editComment(link.id)"
+                      class="text-text-secondary hover:text-primary transition-colors p-1"
+                    >
+                      <img src="@/components/icons/edit.svg" alt="" />
                     </button>
                   </div>
                 </td>
 
                 <!-- Действия (три точки) -->
                 <td class="px-4 py-3 relative">
-                  <button 
-                    @click.stop="showDropdownId === link.id ? showDropdownId = null : showDropdownId = link.id"
+                  <button
+                    @click.stop="toggleDropdown(link.id)"
                     class="p-1 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-page-bg"
                   >
-                    <img src="@/components/icons/more_vert.svg" alt=""/>
+                    <img src="@/components/icons/more_vert.svg" alt="" />
                   </button>
-                  
+
                   <Transition
                     enter-active-class="transition-all duration-200 ease-out"
                     enter-from-class="opacity-0 scale-95 -translate-y-1"
@@ -186,24 +257,24 @@
                     leave-from-class="opacity-100 scale-100 translate-y-0"
                     leave-to-class="opacity-0 scale-95 -translate-y-1"
                   >
-                    <div 
+                    <div
                       v-if="showDropdownId === link.id"
                       class="absolute right-2 top-10 bg-white border border-card-border rounded-[10px] shadow-xl py-2 w-44 z-30"
                       @click.stop
                     >
-                      <button 
-                        @click="editLink(link.id); showDropdownId = null"
+                      <button
+                        @click="handleEditLink(link.id)"
                         class="w-full px-4 py-2.5 text-left font-inter text-[15px] text-text-primary hover:bg-page-bg transition-colors flex items-center gap-3"
                       >
-                        <img src="@/components/icons/edit.svg" alt=""/>
+                        <img src="@/components/icons/edit.svg" alt="" />
                         Редактировать
                       </button>
                       <div class="h-px bg-card-border mx-2 my-1"></div>
-                      <button 
-                        @click="confirmDelete(link.shortUrl); showDropdownId = null"
+                      <button
+                        @click="handleConfirmDelete(link.shortUrl)"
                         class="w-full px-4 py-2.5 text-left font-inter text-[15px] text-error hover:bg-red-50 transition-colors flex items-center gap-3"
                       >
-                        <img src="@/components/icons/delete.svg" alt=""/>
+                        <img src="@/components/icons/delete.svg" alt="" />
                         Удалить
                       </button>
                     </div>
@@ -223,7 +294,10 @@
       </div>
 
       <!-- Пагинация: скругление только снизу -->
-      <div v-if="filteredLinks.length > 0" class="bg-white border border-t-0 border-card-border rounded-b-card flex items-center justify-between px-4 py-3">
+      <div
+        v-if="filteredLinks.length > 0"
+        class="bg-white border border-t-0 border-card-border rounded-b-card flex items-center justify-between px-4 py-3"
+      >
         <div class="flex items-center gap-4">
           <select
             v-model.number="itemsPerPage"
@@ -245,10 +319,12 @@
             :disabled="currentPage === 1"
             class="flex items-center gap-1 px-3 py-1.5 text-[17px] text-text-secondary hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <img src="@/components/icons/arrow_left.svg" alt=""/>
+            <img src="@/components/icons/arrow_left.svg" alt="" />
             Назад
           </button>
-          <span class="px-3 py-1.5 font-inter text-[17px] text-text-primary bg-page-bg rounded-[8px] min-w-[60px] text-center">
+          <span
+            class="px-3 py-1.5 font-inter text-[17px] text-text-primary bg-page-bg rounded-[8px] min-w-[60px] text-center"
+          >
             {{ currentPage }}/{{ totalPages || 1 }}
           </span>
           <button
@@ -257,23 +333,53 @@
             class="flex items-center gap-1 px-3 py-1.5 text-[17px] text-text-secondary hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Вперёд
-            <img src="@/components/icons/arrow_right.svg" alt=""/>
+            <img src="@/components/icons/arrow_right.svg" alt="" />
           </button>
         </div>
       </div>
     </main>
 
     <!-- Попапы -->
-    <ToastNotification v-if="deleteConfirmShow" :show="deleteConfirmShow" title="Удалить ссылку?" message="Это действие нельзя отменить" type="confirm" :show-actions="true" :show-icon="true" :buttons="[{ text: 'Отмена', variant: 'secondary', action: () => { deleteConfirmShow = false; linkCodeToDelete = null } }, { text: 'Удалить', variant: 'danger', action: handleDeleteConfirmed, closeAfter: true }]" @close="deleteConfirmShow = false" />
-    <ToastNotification v-if="toastShow && !deleteConfirmShow" :show="toastShow" :title="toastTitle" :message="toastMessage" :duration="3000" :type="toastType" :show-icon="true" @close="toastShow = false" />
-    <div v-if="showWIPPopup" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showWIPPopup = false">
+    <ToastNotification
+      v-if="deleteConfirmShow"
+      :show="deleteConfirmShow"
+      title="Удалить ссылку?"
+      message="Это действие нельзя отменить"
+      type="confirm"
+      :show-actions="true"
+      :show-icon="true"
+      :buttons="deleteButtons"
+      @close="deleteConfirmShow = false"
+    />
+    <ToastNotification
+      v-if="toastShow && !deleteConfirmShow"
+      :show="toastShow"
+      :title="toastTitle"
+      :message="toastMessage"
+      :duration="3000"
+      :type="toastType"
+      :show-icon="true"
+      @close="toastShow = false"
+    />
+    <div
+      v-if="showWIPPopup"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      @click.self="showWIPPopup = false"
+    >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
         <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center">
           <img src="@/components/icons/dev.svg" alt="" />
         </div>
         <h3 class="font-manrope font-bold text-[24px] text-text-primary mb-2">Упс!</h3>
-        <p class="font-inter text-[17px] text-text-secondary mb-6">Данный функционал в разработке</p>
-        <button @click="showWIPPopup = false" class="h-10 px-8 bg-primary text-white rounded-[10px] font-inter text-[17px] font-medium hover:bg-[#013d41] transition-colors">Понятно</button>
+        <p class="font-inter text-[17px] text-text-secondary mb-6">
+          Данный функционал в разработке
+        </p>
+        <button
+          @click="showWIPPopup = false"
+          class="h-10 px-8 bg-primary text-white rounded-[10px] font-inter text-[17px] font-medium hover:bg-[#013d41] transition-colors"
+        >
+          Понятно
+        </button>
       </div>
     </div>
   </div>
@@ -296,13 +402,15 @@ const COOKIE_NAME = 'linqs_items_per_page'
 const VALID_PAGE_SIZES = [1, 2, 3, 5, 10, 20] as const
 
 // 🔥 Хелперы для работы с куки
-const setCookie = (name: string, value: string, days = 30) => {
+const setCookie = (name: string, value: string, days = 30): void => {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
 }
 
 const getCookie = (name: string): string | null => {
-  const matches = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()\[\]\\/+^])/g, '\\$1')}=([^;]*)`))
+  const matches = document.cookie.match(
+    new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()\[\]\\/+^])/g, '\\$1')}=([^;]*)`)
+  )
   return matches && matches[1] ? decodeURIComponent(matches[1]) : null
 }
 
@@ -320,7 +428,7 @@ const toastType = ref<'success' | 'error' | 'info'>('success')
 // 🔥 Поиск и пагинация
 const searchQuery = ref('')
 const currentPage = ref(1)
-const itemsPerPage = ref<typeof VALID_PAGE_SIZES[number]>(5)
+const itemsPerPage = ref<(typeof VALID_PAGE_SIZES)[number]>(5)
 const sortField = ref<'createdAt' | 'expiresAt' | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const showDropdownId = ref<number | null>(null)
@@ -342,10 +450,11 @@ const selectedLinks = ref<number[]>([])
 const filteredLinks = computed(() => {
   if (!searchQuery.value) return links.value
   const query = searchQuery.value.toLowerCase()
-  return links.value.filter(link => 
-    link.originalUrl.toLowerCase().includes(query) ||
-    link.shortUrl.toLowerCase().includes(query) ||
-    link.comment.toLowerCase().includes(query)
+  return links.value.filter(
+    (link) =>
+      link.originalUrl.toLowerCase().includes(query) ||
+      link.shortUrl.toLowerCase().includes(query) ||
+      link.comment.toLowerCase().includes(query)
   )
 })
 
@@ -371,18 +480,23 @@ const paginatedLinks = computed(() => {
 })
 
 // 🔥 Watchers
-const resetPagination = () => { currentPage.value = 1 }
+const resetPagination = (): void => {
+  currentPage.value = 1
+}
 watch([searchQuery, itemsPerPage], resetPagination)
 
-// 🔥 Сохраняем itemsPerPage в куки при изменении
-watch(itemsPerPage, (newVal) => {
-  if (newVal && VALID_PAGE_SIZES.includes(newVal)) {
-    setCookie(COOKIE_NAME, String(newVal))
-  }
-}, { immediate: false })
+watch(
+  itemsPerPage,
+  (newVal) => {
+    if (newVal && VALID_PAGE_SIZES.includes(newVal)) {
+      setCookie(COOKIE_NAME, String(newVal))
+    }
+  },
+  { immediate: false }
+)
 
 // 🔥 Методы
-const toggleSort = (field: 'createdAt' | 'expiresAt') => {
+const toggleSort = (field: 'createdAt' | 'expiresAt'): void => {
   if (sortField.value === field) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
   } else {
@@ -391,74 +505,134 @@ const toggleSort = (field: 'createdAt' | 'expiresAt') => {
   }
 }
 
-const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
-const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++ }
+const prevPage = (): void => {
+  if (currentPage.value > 1) currentPage.value--
+}
 
-const toggleSelect = (id: number) => {
+const nextPage = (): void => {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+
+const toggleSelect = (id: number): void => {
   const index = selectedLinks.value.indexOf(id)
-  index > -1 ? selectedLinks.value.splice(index, 1) : selectedLinks.value.push(id)
+  if (index > -1) {
+    selectedLinks.value.splice(index, 1)
+  } else {
+    selectedLinks.value.push(id)
+  }
 }
 
-const toggleSelectAll = () => {
-  selectedLinks.value.length === paginatedLinks.value.length 
-    ? selectedLinks.value = [] 
-    : selectedLinks.value = paginatedLinks.value.map(l => l.id)
+const toggleSelectAll = (): void => {
+  if (selectedLinks.value.length === paginatedLinks.value.length) {
+    selectedLinks.value = []
+  } else {
+    selectedLinks.value = paginatedLinks.value.map((l) => l.id)
+  }
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string): string => {
   const date = new Date(dateString)
   return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-const copyLink = async (shortUrl: string) => {
+const copyLink = async (shortUrl: string): Promise<void> => {
   try {
     await navigator.clipboard.writeText(shortUrl)
-    toastTitle.value = 'Готово!'; toastMessage.value = 'Ссылка скопирована'; toastType.value = 'success'; toastShow.value = true
+    toastTitle.value = 'Готово!'
+    toastMessage.value = 'Ссылка скопирована'
+    toastType.value = 'success'
+    toastShow.value = true
   } catch {
-    toastTitle.value = 'Ошибка'; toastMessage.value = 'Не удалось скопировать'; toastType.value = 'error'; toastShow.value = true
+    toastTitle.value = 'Ошибка'
+    toastMessage.value = 'Не удалось скопировать'
+    toastType.value = 'error'
+    toastShow.value = true
   }
 }
 
-const confirmDelete = (shortUrl: string) => {
+const toggleDropdown = (id: number): void => {
+  showDropdownId.value = showDropdownId.value === id ? null : id
+}
+
+const handleEditLink = (id: number): void => {
+  showDropdownId.value = null
+  editComment(id)
+}
+
+const handleConfirmDelete = (shortUrl: string): void => {
+  showDropdownId.value = null
+  confirmDelete(shortUrl)
+}
+
+const confirmDelete = (shortUrl: string): void => {
   const code = shortUrl.split('/').pop()
   if (!code) return
   linkCodeToDelete.value = code
   deleteConfirmShow.value = true
 }
 
-const handleDeleteConfirmed = async () => {
+const handleDeleteConfirmed = async (): Promise<void> => {
   const code = linkCodeToDelete.value
   if (!code) return
   const token = localStorage.getItem('access_token')?.trim()
-  if (!token) return router.push('/auth')
+  if (!token) {
+    router.push('/auth')
+    return
+  }
   try {
-    const response = await fetch(`${API_URL}/links/${code}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const response = await fetch(`${API_URL}/links/${code}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    })
     if (!response.ok) {
-      toastTitle.value = 'Ошибка'; toastMessage.value = 'Не удалось удалить'; toastType.value = 'error'; toastShow.value = true; return
+      toastTitle.value = 'Ошибка'
+      toastMessage.value = 'Не удалось удалить'
+      toastType.value = 'error'
+      toastShow.value = true
+      return
     }
-    links.value = links.value.filter(l => l.shortUrl.split('/').pop() !== code)
-    toastTitle.value = 'Удалено'; toastMessage.value = 'Ссылка удалена'; toastType.value = 'success'; toastShow.value = true
+    links.value = links.value.filter((l) => l.shortUrl.split('/').pop() !== code)
+    toastTitle.value = 'Удалено'
+    toastMessage.value = 'Ссылка удалена'
+    toastType.value = 'success'
+    toastShow.value = true
   } catch {
-    toastTitle.value = 'Ошибка'; toastMessage.value = 'Не удалось удалить'; toastType.value = 'error'; toastShow.value = true
+    toastTitle.value = 'Ошибка'
+    toastMessage.value = 'Не удалось удалить'
+    toastType.value = 'error'
+    toastShow.value = true
   } finally {
-    linkCodeToDelete.value = null; deleteConfirmShow.value = false
+    linkCodeToDelete.value = null
+    deleteConfirmShow.value = false
   }
 }
 
-const togglePrivacy = (id: number) => {
-  const link = links.value.find(l => l.id === id)
+const togglePrivacy = (id: number): void => {
+  const link = links.value.find((l) => l.id === id)
   if (link) link.isPrivate = !link.isPrivate
 }
 
-const editComment = (id: number) => { showWIPPopup.value = true }
-const editLink = (id: number) => { showWIPPopup.value = true }
+const editComment = (id: number): void => {
+  showWIPPopup.value = true
+}
 
-const fetchLinks = async () => {
+const fetchLinks = async (): Promise<void> => {
   const token = localStorage.getItem('access_token')?.trim()
-  if (!token) return router.push('/auth')
+  if (!token) {
+    router.push('/auth')
+    return
+  }
   try {
-    const response = await fetch(`${API_URL}/links`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!response.ok) { if (response.status === 401) { localStorage.removeItem('access_token'); router.push('/auth') } return }
+    const response = await fetch(`${API_URL}/links`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('access_token')
+        router.push('/auth')
+      }
+      return
+    }
     const data = await response.json()
     links.value = data?.map((item: any) => ({
       id: item.id,
@@ -467,20 +641,45 @@ const fetchLinks = async () => {
       createdAt: item.created_at,
       expiresAt: item.expires_at,
       comment: item.comment || '',
-      isPrivate: item.is_private || false,
+      isPrivate: item.is_private || false
     }))
-  } catch (err) { console.error('💥 Network error:', err) }
+  } catch (err) {
+    console.error('💥 Network error:', err)
+  }
 }
 
-const handleLogout = () => { localStorage.removeItem('access_token'); router.push('/auth') }
+// 🔥 Кнопки для модалки удаления (вынесено из шаблона!)
+const deleteButtons = computed(() => [
+  {
+    text: 'Отмена',
+    variant: 'secondary' as const,
+    action: cancelDelete
+  },
+  {
+    text: 'Удалить',
+    variant: 'danger' as const,
+    action: handleDeleteConfirmed,
+    closeAfter: true
+  }
+])
+
+const cancelDelete = (): void => {
+  deleteConfirmShow.value = false
+  linkCodeToDelete.value = null
+}
+
+const handleLogout = (): void => {
+  localStorage.removeItem('access_token')
+  router.push('/auth')
+}
 
 // 🔥 Инициализация
 onMounted(() => {
   const saved = getCookie(COOKIE_NAME)
   if (saved) {
     const parsed = Number(saved)
-    if (VALID_PAGE_SIZES.some(size => size === parsed)) {
-      itemsPerPage.value = parsed as typeof VALID_PAGE_SIZES[number]
+    if (VALID_PAGE_SIZES.some((size) => size === parsed)) {
+      itemsPerPage.value = parsed as (typeof VALID_PAGE_SIZES)[number]
     }
   }
   fetchLinks()

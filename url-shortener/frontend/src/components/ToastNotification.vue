@@ -33,7 +33,13 @@
               :class="iconBgClass"
             >
               <!-- Иконка ошибки / подтверждения (красный крестик) -->
-              <svg v-if="type === 'error' || type === 'confirm'" width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <svg
+                v-if="type === 'error' || type === 'confirm'"
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                fill="none"
+              >
                 <path
                   d="M16 8V16M16 20H16.01M8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16Z"
                   :stroke="iconColor"
@@ -42,9 +48,15 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              
+
               <!-- Иконка успеха (зелёная галочка) -->
-              <svg v-else-if="type === 'success'" width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <svg
+                v-else-if="type === 'success'"
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                fill="none"
+              >
                 <path
                   d="M6 16L13 23L26 9"
                   stroke="#10B981"
@@ -55,8 +67,20 @@
               </svg>
 
               <!-- Иконка инфо (синяя "i") -->
-              <svg v-else-if="type === 'info'" width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <path d="M16 8V16M16 20H16.01M8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16Z" stroke="#3B82F6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-else-if="type === 'info'"
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                fill="none"
+              >
+                <path
+                  d="M16 8V16M16 20H16.01M8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16Z"
+                  stroke="#3B82F6"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
 
@@ -71,7 +95,10 @@
             </p>
 
             <!-- 🔥 Кнопки действий (если есть) -->
-            <div v-if="showActions && buttons?.length" class="flex items-center justify-center gap-3">
+            <div
+              v-if="showActions && buttons?.length"
+              class="flex items-center justify-center gap-3"
+            >
               <button
                 v-for="(btn, idx) in buttons"
                 :key="idx"
@@ -90,7 +117,12 @@
               class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path
+                  d="M6 6L18 18M6 18L18 6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -112,24 +144,27 @@ export interface ToastButton {
 }
 
 // 🔥 ЕДИНЫЙ вызов defineProps + withDefaults (исправлено!)
-const props = withDefaults(defineProps<{
-  show: boolean
-  title: string
-  message: string
-  duration?: number
-  type?: 'success' | 'error' | 'confirm' | 'info'
-  buttons?: ToastButton[]
-  showActions?: boolean
-  showCloseButton?: boolean
-  showIcon?: boolean
-}>(), {
-  duration: 3000,
-  type: 'success',
-  buttons: () => [],
-  showActions: false,
-  showCloseButton: true,
-  showIcon: true,
-})
+const props = withDefaults(
+  defineProps<{
+    show: boolean
+    title: string
+    message: string
+    duration?: number
+    type?: 'success' | 'error' | 'confirm' | 'info'
+    buttons?: ToastButton[]
+    showActions?: boolean
+    showCloseButton?: boolean
+    showIcon?: boolean
+  }>(),
+  {
+    duration: 3000,
+    type: 'success',
+    buttons: () => [],
+    showActions: false,
+    showCloseButton: true,
+    showIcon: true,
+  },
+)
 
 const emit = defineEmits<{
   close: []
@@ -157,7 +192,7 @@ const iconBgClass = computed(() => {
 })
 
 const iconColor = computed(() => {
-  return (props.type === 'error' || props.type === 'confirm') ? '#EF4444' : '#10B981'
+  return props.type === 'error' || props.type === 'confirm' ? '#EF4444' : '#10B981'
 })
 
 // 🔥 Стили для кнопок
@@ -179,7 +214,7 @@ const startTimer = () => {
   if (timeoutId) clearTimeout(timeoutId)
   // Не запускаем таймер, если есть кнопки действий
   if (props.showActions && props.buttons?.length) return
-  
+
   timeoutId = setTimeout(() => {
     close()
   }, props.duration || 3000)
@@ -207,15 +242,19 @@ const handleOverlayClick = () => {
 
 const handleButtonClick = (btn: ToastButton) => {
   if (btn.action) btn.action()
-  
+
   // Эмитим события для удобства
   if (btn.text.toLowerCase().includes('отмена') || btn.text.toLowerCase().includes('cancel')) {
     emit('cancel')
-  } else if (btn.text.toLowerCase().includes('удалить') || btn.text.toLowerCase().includes('confirm') || btn.text.toLowerCase().includes('подтвердить')) {
+  } else if (
+    btn.text.toLowerCase().includes('удалить') ||
+    btn.text.toLowerCase().includes('confirm') ||
+    btn.text.toLowerCase().includes('подтвердить')
+  ) {
     emit('confirm')
   }
   emit('action', props.buttons?.indexOf(btn) || 0)
-  
+
   // Закрываем тост, если не указано иное
   if (btn.closeAfter !== false) {
     close()
@@ -231,6 +270,6 @@ watch(
       close()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 </script>

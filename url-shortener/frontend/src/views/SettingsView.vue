@@ -29,7 +29,6 @@
           Ссылки
         </router-link>
 
-        
         <router-link
           to="/analytics"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
@@ -45,7 +44,7 @@
           <img src="@/components/icons/settings_nav_active.svg" alt="" />
           Настройки
         </router-link>
-    </nav>
+      </nav>
 
       <!-- Профиль -->
       <div class="p-4 border-t border-card-border">
@@ -77,16 +76,18 @@
         <!-- Профиль -->
         <div class="bg-white rounded-card border border-card-border p-6">
           <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">Профиль</h2>
-          
+
           <div class="flex gap-4 mb-6">
             <!-- Аватар -->
-            <div class="w-16 h-16 rounded-full bg-page-bg flex items-center justify-center overflow-hidden">
+            <div
+              class="w-16 h-16 rounded-full bg-page-bg flex items-center justify-center overflow-hidden"
+            >
               <!-- ICON: avatar_placeholder -->
               <div class="w-16 h-16 bg-gray-200 rounded-full">
-                <img src="@/components/icons/avatar.png" alt="">
+                <img src="@/components/icons/avatar.png" alt="" />
               </div>
             </div>
-            
+
             <div class="flex-1">
               <div class="flex gap-8 mb-2">
                 <div>
@@ -106,13 +107,17 @@
           </div>
 
           <h3 class="font-inter text-[17px] font-medium text-text-primary mb-4">Профиль</h3>
-          
+
           <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center">
+            <div
+              class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
+            >
               <div class="font-inter text-[14px] text-text-secondary mb-1">Электронная почта</div>
               <div class="font-inter text-[17px] text-text-primary">yourperfectemail@gmail.com</div>
             </div>
-            <div class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center">
+            <div
+              class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
+            >
               <div class="font-inter text-[14px] text-text-secondary mb-1">Номер телефона</div>
               <div class="font-inter text-[17px] text-text-primary">+79529525252</div>
             </div>
@@ -129,13 +134,15 @@
         <!-- Тарифы -->
         <div class="bg-white rounded-card border border-card-border p-6">
           <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">Тарифы</h2>
-          
+
           <div class="grid grid-cols-3 gap-4">
             <!-- Базовый -->
             <div class="border border-card-border rounded-[16px] p-4">
               <div class="font-inter text-[17px] font-medium text-text-primary mb-2">Базовый</div>
-              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">0 ₽ / мес.</div>
-              
+              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">
+                0 ₽ / мес.
+              </div>
+
               <ul class="space-y-2 mb-6">
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
@@ -165,9 +172,13 @@
 
             <!-- Профессиональный -->
             <div class="border border-card-border rounded-[16px] p-4">
-              <div class="font-inter text-[17px] font-medium text-text-primary mb-2">Профессиональный</div>
-              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">700 ₽ / мес.</div>
-              
+              <div class="font-inter text-[17px] font-medium text-text-primary mb-2">
+                Профессиональный
+              </div>
+              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">
+                700 ₽ / мес.
+              </div>
+
               <ul class="space-y-2 mb-6">
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
@@ -175,7 +186,9 @@
                 </li>
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
-                  <span class="font-inter text-[14px] text-text-secondary">Расширенная аналитика</span>
+                  <span class="font-inter text-[14px] text-text-secondary"
+                    >Расширенная аналитика</span
+                  >
                 </li>
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
@@ -197,13 +210,19 @@
 
             <!-- Корпоративный -->
             <div class="border border-card-border rounded-[16px] p-4">
-              <div class="font-inter text-[17px] font-medium text-text-primary mb-2">Корпоративный</div>
-              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">5000 ₽ / мес.</div>
-              
+              <div class="font-inter text-[17px] font-medium text-text-primary mb-2">
+                Корпоративный
+              </div>
+              <div class="font-manrope font-bold text-[24px] text-text-primary mb-4">
+                5000 ₽ / мес.
+              </div>
+
               <ul class="space-y-2 mb-6">
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
-                  <span class="font-inter text-[14px] text-text-secondary">Неограниченные ссылки</span>
+                  <span class="font-inter text-[14px] text-text-secondary"
+                    >Неограниченные ссылки</span
+                  >
                 </li>
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
@@ -215,11 +234,15 @@
                 </li>
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
-                  <span class="font-inter text-[14px] text-text-secondary">До 20 пользователей</span>
+                  <span class="font-inter text-[14px] text-text-secondary"
+                    >До 20 пользователей</span
+                  >
                 </li>
                 <li class="flex items-center gap-2">
                   <div class="w-1.5 h-1.5 rounded-full bg-success"></div>
-                  <span class="font-inter text-[14px] text-text-secondary">Брендирование ссылок</span>
+                  <span class="font-inter text-[14px] text-text-secondary"
+                    >Брендирование ссылок</span
+                  >
                 </li>
               </ul>
 
@@ -237,44 +260,42 @@
       <!-- Другие настройки -->
       <div class="bg-white rounded-card border border-card-border p-6">
         <h2 class="font-inter text-[17px] font-medium text-text-primary mb-6">Другие настройки</h2>
-        
+
         <div class="space-y-4">
           <!-- Тёмная тема -->
           <div class="flex items-center justify-between py-2">
             <span class="font-inter text-[17px] text-text-primary">Тёмная тема</span>
             <label class="relative inline-flex items-center cursor-pointer">
-              <input
-                v-model="settings.darkTheme"
-                type="checkbox"
-                class="sr-only peer"
-              />
-              <div class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <input v-model="settings.darkTheme" type="checkbox" class="sr-only peer" />
+              <div
+                class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+              ></div>
             </label>
           </div>
 
           <!-- Уведомления -->
           <div class="flex items-center justify-between py-2">
-            <span class="font-inter text-[17px] text-text-primary">Уведомления об истекающих ссылках</span>
+            <span class="font-inter text-[17px] text-text-primary"
+              >Уведомления об истекающих ссылках</span
+            >
             <label class="relative inline-flex items-center cursor-pointer">
-              <input
-                v-model="settings.notifications"
-                type="checkbox"
-                class="sr-only peer"
-              />
-              <div class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <input v-model="settings.notifications" type="checkbox" class="sr-only peer" />
+              <div
+                class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+              ></div>
             </label>
           </div>
 
           <!-- 2FA -->
           <div class="flex items-center justify-between py-2">
-            <span class="font-inter text-[17px] text-text-primary">Двухфакторная аутентификация</span>
+            <span class="font-inter text-[17px] text-text-primary"
+              >Двухфакторная аутентификация</span
+            >
             <label class="relative inline-flex items-center cursor-pointer">
-              <input
-                v-model="settings.twoFA"
-                type="checkbox"
-                class="sr-only peer"
-              />
-              <div class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              <input v-model="settings.twoFA" type="checkbox" class="sr-only peer" />
+              <div
+                class="w-11 h-6 bg-card-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+              ></div>
             </label>
           </div>
         </div>
@@ -310,7 +331,9 @@
       @click.self="deleteAccountConfirmShow = false"
     >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
+        <div
+          class="w-16 h-16 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center"
+        >
           <!-- ICON: warning -->
           <div class="w-8 h-8 bg-error rounded">warning</div>
         </div>
@@ -380,7 +403,7 @@ const handleDeleteAccount = async () => {
   toastType.value = 'success'
   toastShow.value = true
   deleteAccountConfirmShow.value = false
-  
+
   setTimeout(() => {
     router.push('/auth')
   }, 1500)

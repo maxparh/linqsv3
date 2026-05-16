@@ -13,7 +13,7 @@ const routes = [
     path: '/cookie-policy',
     name: 'CookiePolicy',
     component: () => import('@/views/CookiePolicyView.vue'),
-    meta: { requiresAuth: false } // публичная страница
+    meta: { requiresAuth: false }, // публичная страница
   },
   {
     path: '/',
@@ -29,26 +29,26 @@ const routes = [
     path: '/links',
     name: 'links',
     component: isAuthenticated ? LinksView : () => import('@/views/UnauthorizedView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/analytics',
     name: 'analytics',
     component: isAuthenticated ? AnalyticsView : () => import('@/views/UnauthorizedView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/settings',
     name: 'Settings',
     component: isAuthenticated ? SettingsView : () => import('@/views/UnauthorizedView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
   {
     path: '/:shortCode',
     name: 'ShortLink',
     component: ShortLinkView,
-    meta: { requiresAuth: false }
-  }
+    meta: { requiresAuth: false },
+  },
 ]
 
 const router = createRouter({

@@ -13,13 +13,13 @@ const router = useRouter()
 
 onMounted(async () => {
   const shortCode = route.params.shortCode
-  
+
   if (!shortCode || typeof shortCode !== 'string') {
     alert('Неверный формат ссылки')
     router.push('/')
     return
   }
-  
+
   try {
     const res = await fetch(`/api/resolve/${shortCode}`)
     if (!res.ok) {
@@ -28,16 +28,16 @@ onMounted(async () => {
       return
     }
     const data = await res.json()
-    
+
     // 🔥 Исправлено: original_link → original_url
     const originalUrl = data.original_url
-    
+
     if (!originalUrl) {
       alert('Неверный формат ответа сервера')
       router.push('/')
       return
     }
-    
+
     window.location.href = originalUrl
   } catch (err) {
     console.error(err)

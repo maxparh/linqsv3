@@ -16,13 +16,16 @@ watch(
   () => router.currentRoute.value.path,
   (newPath, oldPath) => {
     // Если перешли с страницы авторизации на защищённую страницу
-    if ((oldPath === '/auth' || oldPath === '/register') && 
-        newPath !== '/auth' && newPath !== '/register') {
+    if (
+      (oldPath === '/auth' || oldPath === '/register') &&
+      newPath !== '/auth' &&
+      newPath !== '/register'
+    ) {
       // 🔥 Исправлено: вызываем правильный метод
       setTimeout(() => {
         cookieBanner.value?.checkAndShow()
       }, 500)
     }
-  }
+  },
 )
 </script>

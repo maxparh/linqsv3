@@ -63,7 +63,9 @@
 
     <!-- Подтвердите пароль -->
     <div>
-      <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5">Подтвердите пароль</label>
+      <label class="block text-[14px] font-['Inter'] text-[#475569] mb-1.5"
+        >Подтвердите пароль</label
+      >
       <input
         v-model="form.confirmPassword"
         type="password"
@@ -121,8 +123,8 @@ import ToastNotification from '@/components/ToastNotification.vue'
 const router = useRouter()
 const error = ref('')
 const loading = ref(false)
-const phoneDisplay = ref('')  // Форматированный номер для отображения
-const phoneE164 = ref('')     // Чистый номер для API (+79991234567)
+const phoneDisplay = ref('') // Форматированный номер для отображения
+const phoneE164 = ref('') // Чистый номер для API (+79991234567)
 const toastShow = ref(false)
 const toastTitle = ref('')
 const toastMessage = ref('')
@@ -134,24 +136,30 @@ const showToast = (title: string, message: string) => {
   // Компонент сам закроется через 3 сек
 }
 
-const parseRegistrationError = (errorMsg: string): { title: string, message: string } => {
+const parseRegistrationError = (errorMsg: string): { title: string; message: string } => {
   const lowerError = errorMsg.toLowerCase()
-  
+
   if (errorMsg.includes('users_phone_key') || lowerError.includes('phone')) {
-    return { title: 'Номер уже занят', message: 'Пользователь с таким номером телефона уже зарегистрирован' }
+    return {
+      title: 'Номер уже занят',
+      message: 'Пользователь с таким номером телефона уже зарегистрирован',
+    }
   }
-  
+
   if (errorMsg.includes('users_email_key') || lowerError.includes('email')) {
     return { title: 'Email уже занят', message: 'Пользователь с таким email уже зарегистрирован' }
   }
-  
+
   // Универсальная проверка для "user already exists"
   if (lowerError.includes('already exists')) {
-    return phoneE164.value 
-      ? { title: 'Номер уже занят', message: 'Пользователь с таким номером телефона уже зарегистрирован' }
+    return phoneE164.value
+      ? {
+          title: 'Номер уже занят',
+          message: 'Пользователь с таким номером телефона уже зарегистрирован',
+        }
       : { title: 'Email уже занят', message: 'Пользователь с таким email уже зарегистрирован' }
   }
-  
+
   return { title: 'Ошибка регистрации', message: errorMsg || 'Не удалось создать аккаунт' }
 }
 
@@ -161,7 +169,7 @@ const form = reactive({
   firstName: '',
   lastName: '',
   email: '',
-  phone: '',  // Отправляем в БД
+  phone: '', // Отправляем в БД
   password: '',
   confirmPassword: '',
   agree: false,
@@ -265,7 +273,7 @@ const handleSubmit = async () => {
         loading.value = false
         return
       }
-      
+
       // Остальные ошибки (400, 500, и т.д.)
       const text = await registerRes.text()
       error.value = text || 'Ошибка регистрации'
@@ -313,24 +321,40 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-:deep(.vue-tel-input) { border: none !important; box-shadow: none !important; }
+:deep(.vue-tel-input) {
+  border: none !important;
+  box-shadow: none !important;
+}
 :deep(.vue-tel-input input) {
-  height: 40px !important; border: 1px solid #E2E8F0 !important;
-  border-radius: 10px !important; background: white !important;
-  font-family: 'Inter', sans-serif !important; font-size: 17px !important;
-  color: #0F172A !important; padding: 0 16px !important;
+  height: 40px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background: white !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 17px !important;
+  color: #0f172a !important;
+  padding: 0 16px !important;
   transition: border-color 0.2s !important;
 }
-:deep(.vue-tel-input input:focus) { outline: none !important; border-color: #014751 !important; }
-:deep(.vue-tel-input input::placeholder) { color: #64748B !important; }
+:deep(.vue-tel-input input:focus) {
+  outline: none !important;
+  border-color: #014751 !important;
+}
+:deep(.vue-tel-input input::placeholder) {
+  color: #64748b !important;
+}
 :deep(.vue-tel-input .dropdown) {
-  z-index: 50 !important; border-radius: 10px !important;
-  border: 1px solid #E2E8F0 !important; font-family: 'Inter', sans-serif !important;
+  z-index: 50 !important;
+  border-radius: 10px !important;
+  border: 1px solid #e2e8f0 !important;
+  font-family: 'Inter', sans-serif !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-  max-height: 200px !important; overflow-y: auto !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
 }
 :deep(.vue-tel-input .selection) {
-  height: 40px !important; border-right: 1px solid #E2E8F0 !important;
+  height: 40px !important;
+  border-right: 1px solid #e2e8f0 !important;
   background: white !important;
 }
 </style>

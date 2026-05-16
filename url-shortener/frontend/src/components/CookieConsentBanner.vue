@@ -13,16 +13,13 @@
       class="fixed bottom-0 left-0 right-0 bg-white border-t border-card-border p-4 md:p-6 z-50 shadow-lg"
     >
       <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-4">
-        
         <div class="flex-1">
-          <p class="font-inter text-[17px] text-text-primary mb-2">
-            Мы используем cookies 🔍
-          </p>
+          <p class="font-inter text-[17px] text-text-primary mb-2">Мы используем cookies 🔍</p>
           <p class="font-inter text-[14px] text-text-secondary">
-            Это помогает нам улучшать работу сайта. Вы можете 
+            Это помогает нам улучшать работу сайта. Вы можете
             <router-link to="/cookie-policy" class="text-primary hover:underline" target="_blank">
-              ознакомиться подробно
-            </router-link>.
+              ознакомиться подробно </router-link
+            >.
           </p>
         </div>
 
@@ -40,7 +37,6 @@
             Принять
           </button>
         </div>
-
       </div>
     </div>
   </Transition>
@@ -55,13 +51,13 @@ const show = ref(false)
 
 // Проверка: есть ли уже согласие в cookies
 const hasConsent = () => {
-  return document.cookie.split(';').some(c => c.trim().startsWith(CONSENT_COOKIE))
+  return document.cookie.split(';').some((c) => c.trim().startsWith(CONSENT_COOKIE))
 }
 
 // Показать баннер, если согласия нет
 const checkAndShow = () => {
   if (!hasConsent()) {
-    setTimeout(() => show.value = true, 800)
+    setTimeout(() => (show.value = true), 800)
   }
 }
 
@@ -73,15 +69,15 @@ const sendConsent = async (accepted: boolean, prefs: Record<string, boolean> = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accepted,
-        preferences: { 
-          necessary: true, 
-          analytics: prefs.analytics || false, 
-          marketing: prefs.marketing || false 
-        }
+        preferences: {
+          necessary: true,
+          analytics: prefs.analytics || false,
+          marketing: prefs.marketing || false,
+        },
       }),
       credentials: 'include',
     })
-    
+
     if (response.ok) {
       show.value = false
       return true

@@ -29,7 +29,6 @@
           Ссылки
         </router-link>
 
-        
         <router-link
           to="/analytics"
           class="flex items-center gap-3 w-[188px] h-12 px-4 rounded-[10px] text-text-secondary font-inter text-[17px] font-medium hover:text-text-primary transition-colors"
@@ -164,8 +163,15 @@
       :show-actions="true"
       :show-icon="true"
       :buttons="[
-        { text: 'Отмена', variant: 'secondary', action: () => { deleteConfirmShow = false; linkCodeToDelete = null } },
-        { text: 'Удалить', variant: 'danger', action: handleDeleteConfirmed, closeAfter: true }
+        {
+          text: 'Отмена',
+          variant: 'secondary',
+          action: () => {
+            deleteConfirmShow = false
+            linkCodeToDelete = null
+          },
+        },
+        { text: 'Удалить', variant: 'danger', action: handleDeleteConfirmed, closeAfter: true },
       ]"
       @close="deleteConfirmShow = false"
     />
@@ -199,7 +205,9 @@
       @click.self="showWIPPopup = false"
     >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center">
+        <div
+          class="w-16 h-16 mx-auto mb-4 rounded-full bg-page-bg flex items-center justify-center"
+        >
           <img src="@/components/icons/dev.svg" alt="" />
         </div>
         <h3 class="font-manrope font-bold text-[24px] text-text-primary mb-2">Упс!</h3>
@@ -317,13 +325,12 @@ const handleDeleteConfirmed = async () => {
     }
 
     // ✅ Успех: удаляем из локального списка
-    links.value = links.value.filter(l => l.shortUrl.split('/').pop() !== code)
+    links.value = links.value.filter((l) => l.shortUrl.split('/').pop() !== code)
 
     toastTitle.value = 'Удалено'
     toastMessage.value = 'Ссылка успешно удалена'
     toastType.value = 'success'
     toastShow.value = true
-
   } catch (err) {
     console.error('💥 Network error on delete:', err)
     toastTitle.value = 'Ошибка'

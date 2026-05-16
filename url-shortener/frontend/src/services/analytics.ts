@@ -38,16 +38,18 @@ export const analyticsAPI = {
   async getOverview(days: number = 7): Promise<AnalyticsOverview> {
     const response = await axios.get(`${API_URL}/analytics/overview`, {
       params: { days },
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
     })
     // Защита от null
-    return response.data || { total_clicks: 0, unique_clicks: 0, bounce_rate: 0, avg_time_on_site: 0 }
+    return (
+      response.data || { total_clicks: 0, unique_clicks: 0, bounce_rate: 0, avg_time_on_site: 0 }
+    )
   },
 
   async getClicksOverTime(days: number = 7): Promise<ClicksOverTime> {
     const response = await axios.get(`${API_URL}/analytics/clicks-over-time`, {
       params: { days },
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
     })
     return response.data || { labels: [], values: [] }
   },
@@ -55,7 +57,7 @@ export const analyticsAPI = {
   async getTopLocations(days: number = 7, limit: number = 5): Promise<LocationStat[]> {
     const response = await axios.get(`${API_URL}/analytics/top-locations`, {
       params: { days, limit },
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
     })
     return response.data || []
   },
@@ -63,7 +65,7 @@ export const analyticsAPI = {
   async getDeviceStats(days: number = 7): Promise<DeviceStat[]> {
     const response = await axios.get(`${API_URL}/analytics/devices`, {
       params: { days },
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
     })
     return response.data || []
   },
@@ -71,8 +73,8 @@ export const analyticsAPI = {
   async getBounceRate(days: number = 7): Promise<BounceRateStat[]> {
     const response = await axios.get(`${API_URL}/analytics/bounce-rate`, {
       params: { days },
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
     })
     return response.data || []
-  }
+  },
 }
