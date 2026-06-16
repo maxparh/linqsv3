@@ -47,6 +47,8 @@
 
 The nginx configuration is tailored for the `linqs.ru` domain. When deploying on your own server, **first of all** update `server_name` and related settings in `url-shortener/frontend/nginx.conf` to match your domain.
 
+You will also need to set up SSL certificates. A commented Let's Encrypt block is included in `nginx.conf` — uncomment it and point to your certificate files. Use [Certbot](https://certbot.eff.org/) to obtain free certificates.
+
 ### Quick Start (local)
 
 ```bash
