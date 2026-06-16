@@ -2,9 +2,9 @@
 
 ---
 
-# LINQS
+# Linqs
 
-**LINQS** is an open-source URL shortener.
+**Linqs** is an open-source URL shortener.
 
 ## Tech Stack
 
@@ -55,6 +55,8 @@ chmod +x install.sh
 ```
 
 The script automatically checks dependencies, generates a JWT secret, configures the environment, and starts the project via Docker Compose.
+
+> **Note:** `install.sh` has not been tested, manual setup via `docker compose up -d` is recommended.
 
 ### Self-Hosted (manual)
 

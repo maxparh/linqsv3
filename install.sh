@@ -70,7 +70,7 @@ docker compose up -d --build
 
 echo ""
 info "========================================"
-info " LINQS запущен!"
+info " Linqs запущен!"
 info " Frontend: http://localhost"
 info " Backend:  http://localhost:8080"
 info "========================================"
