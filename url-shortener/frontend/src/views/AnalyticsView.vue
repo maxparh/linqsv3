@@ -461,7 +461,7 @@ const updateDonutChart = () => {
   if (!donutChart) return
 
   const data = (devices.value || []).map((d) => ({
-    value: d.percent ?? 0, // ← ИЗМЕНИЛ: теперь проценты вместо d.value
+    value: d.percent ?? 0,
     name: d.name ?? 'Unknown',
     itemStyle: { color: d.color ?? '#94a3b8' },
   }))
@@ -488,7 +488,7 @@ const updateDonutChart = () => {
           scale: true,
           scaleSize: 10,
         },
-        data: data, // ← Теперь здесь проценты
+        data: data,
       },
     ],
   })

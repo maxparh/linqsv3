@@ -9,7 +9,7 @@ import (
     "url-shortener/internal/domain"
     "url-shortener/internal/repository"
 
-    "github.com/golang-jwt/jwt/v5"  // ← внешние после пустой строки
+    "github.com/golang-jwt/jwt/v5"
     "golang.org/x/crypto/bcrypt"
 )
 
@@ -132,7 +132,6 @@ func (s *authService) ValidateToken(tokenString string) (*domain.Claims, error) 
 	})
 
 	if err != nil {
-		// 🔥 ДОБАВЛЕНО: лог ошибки
 		log.Printf("❌ ValidateToken error: %v (token starts with: %s...)", err, tokenString[:min(30, len(tokenString))])
 		return nil, err
 	}

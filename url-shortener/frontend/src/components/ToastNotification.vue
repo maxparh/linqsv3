@@ -135,7 +135,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 
-// 🔥 Тип для кнопки тоста
+// Тип для кнопки тоста
 export interface ToastButton {
   text: string
   variant?: 'primary' | 'secondary' | 'danger'
@@ -143,7 +143,7 @@ export interface ToastButton {
   closeAfter?: boolean
 }
 
-// 🔥 ЕДИНЫЙ вызов defineProps + withDefaults (исправлено!)
+// defineProps + withDefaults
 const props = withDefaults(
   defineProps<{
     show: boolean
@@ -176,7 +176,7 @@ const emit = defineEmits<{
 const visible = ref(false)
 let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-// 🔥 Вычисляемые стили для иконки
+// Стили для иконки
 const iconBgClass = computed(() => {
   switch (props.type) {
     case 'error':
@@ -195,7 +195,7 @@ const iconColor = computed(() => {
   return props.type === 'error' || props.type === 'confirm' ? '#EF4444' : '#10B981'
 })
 
-// 🔥 Стили для кнопок
+// Стили для кнопок
 const getButtonClass = (variant: ToastButton['variant'] = 'primary') => {
   const base = 'hover:opacity-90 active:scale-95 transition-all'
   switch (variant) {
@@ -209,7 +209,7 @@ const getButtonClass = (variant: ToastButton['variant'] = 'primary') => {
   }
 }
 
-// 🔥 Обработчики
+// Обработчики
 const startTimer = () => {
   if (timeoutId) clearTimeout(timeoutId)
   // Не запускаем таймер, если есть кнопки действий

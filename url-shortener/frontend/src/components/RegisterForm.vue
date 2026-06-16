@@ -175,7 +175,7 @@ const form = reactive({
   agree: false,
 })
 
-// 🔥 Безопасный парсер: принимает ЛЮБОЙ тип, возвращает string | null
+// Парсер телефона: принимает разные форматы, возвращает E.164
 const parsePhoneToE164 = (input: unknown): string | null => {
   // 1. Приводим к строке безопасно
   let value: string
@@ -221,7 +221,7 @@ const parsePhoneToE164 = (input: unknown): string | null => {
   return null // Не валидный формат
 }
 
-// 🔥 Обработчик @input для vue-tel-input v9
+// Обработчик @input для vue-tel-input
 // Может прийти: string, Event, или объект — парсер всё обработает
 const handleTelInput = (payload: unknown) => {
   const result = parsePhoneToE164(payload)
@@ -240,7 +240,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    // 🔥 Финальный парсинг прямо перед отправкой (двойная защита)
+    // Повторный парсинг перед отправкой
     const finalPhone = parsePhoneToE164(phoneDisplay.value) || phoneE164.value || null
     const phonePayload = finalPhone ? finalPhone : undefined
 

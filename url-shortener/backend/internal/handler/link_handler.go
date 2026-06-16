@@ -23,12 +23,12 @@ type LinkHandler struct {
 	baseURL          string
 }
 
-// 🔥 Конструктор с sessionRepo
+// Конструктор
 func NewLinkHandler(linkService service.LinkService, analyticsService service.AnalyticsService, sessionRepo repository.SessionRepository, baseURL string) *LinkHandler {
 	return &LinkHandler{
 		linkService:      linkService,
 		analyticsService: analyticsService,
-		sessionRepo:      sessionRepo, // ← Теперь работает
+		sessionRepo:      sessionRepo,
 		baseURL:          baseURL,
 	}
 }
@@ -134,7 +134,7 @@ func (h *LinkHandler) ResolveLink(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// 🔥 ЕДИНЫЙ метод Redirect (удали дубликат!)
+// Redirect
 // Путь: /{code}
 func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 	code := strings.TrimPrefix(r.URL.Path, "/")
@@ -154,16 +154,16 @@ func (h *LinkHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🚀 Redirecting code: %s -> %s", code, link.OriginalURL)
 
 	// 2. Записываем аналитику АСИНХРОННО
-	// 🔥 ВАЖНО: используем context.Background(), иначе запись прервется после редиректа
+	// Используем context.Background(), чтобы запись не прервалась после редиректа
 	go h.recordSession(context.Background(), link.ID, r)
 
 	// 3. Делаем редирект
 	http.Redirect(w, r, link.OriginalURL, http.StatusFound)
 }
 
-// 🔥 recordSession — запись аналитики при переходе по ссылке
+// recordSession записывает аналитику при переходе по ссылке
 func (h *LinkHandler) recordSession(ctx context.Context, linkID int, r *http.Request) {
-	// 🔥 Создаем НОВЫЙ контекст с таймаутом, независимый от запроса
+	// Создаём независимый контекст с таймаутом
 	recordCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

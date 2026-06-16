@@ -21,7 +21,7 @@ watch(
       newPath !== '/auth' &&
       newPath !== '/register'
     ) {
-      // 🔥 Исправлено: вызываем правильный метод
+      // Вызываем проверку баннера
       setTimeout(() => {
         cookieBanner.value?.checkAndShow()
       }, 500)

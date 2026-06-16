@@ -395,13 +395,13 @@ import lockedIcon from '@/components/icons/locked.svg'
 import chevronUpIcon from '@/components/icons/chevron_up.svg'
 import chevronDownIcon from '@/components/icons/chevron_down.svg'
 
-// 🔥 Константы
+// Константы
 const API_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const SHORT_LINK_DOMAIN = import.meta.env.VITE_SHORT_LINK_DOMAIN || 'http://localhost'
 const COOKIE_NAME = 'linqs_items_per_page'
 const VALID_PAGE_SIZES = [1, 2, 3, 5, 10, 20] as const
 
-// 🔥 Хелперы для работы с куки
+// Хелперы для работы с куки
 const setCookie = (name: string, value: string, days = 30): void => {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`
@@ -416,7 +416,7 @@ const getCookie = (name: string): string | null => {
 
 const router = useRouter()
 
-// 🔥 Состояния UI
+// Состояния UI
 const showWIPPopup = ref(false)
 const deleteConfirmShow = ref(false)
 const linkCodeToDelete = ref<string | null>(null)
@@ -425,7 +425,7 @@ const toastTitle = ref('')
 const toastMessage = ref('')
 const toastType = ref<'success' | 'error' | 'info'>('success')
 
-// 🔥 Поиск и пагинация
+// Поиск и пагинация
 const searchQuery = ref('')
 const currentPage = ref(1)
 const itemsPerPage = ref<(typeof VALID_PAGE_SIZES)[number]>(5)
@@ -446,7 +446,7 @@ interface Link {
 const links = ref<Link[]>([])
 const selectedLinks = ref<number[]>([])
 
-// 🔥 Вычисляемые свойства
+// Вычисляемые свойства
 const filteredLinks = computed(() => {
   if (!searchQuery.value) return links.value
   const query = searchQuery.value.toLowerCase()
@@ -479,7 +479,7 @@ const paginatedLinks = computed(() => {
   return sortedLinks.value.slice(start, end)
 })
 
-// 🔥 Watchers
+// Watchers
 const resetPagination = (): void => {
   currentPage.value = 1
 }
@@ -495,7 +495,7 @@ watch(
   { immediate: false }
 )
 
-// 🔥 Методы
+// Методы
 const toggleSort = (field: 'createdAt' | 'expiresAt'): void => {
   if (sortField.value === field) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -648,7 +648,7 @@ const fetchLinks = async (): Promise<void> => {
   }
 }
 
-// 🔥 Кнопки для модалки удаления (вынесено из шаблона!)
+// Кнопки для модалки удаления
 const deleteButtons = computed(() => [
   {
     text: 'Отмена',
@@ -673,7 +673,7 @@ const handleLogout = (): void => {
   router.push('/auth')
 }
 
-// 🔥 Инициализация
+// Инициализация
 onMounted(() => {
   const saved = getCookie(COOKIE_NAME)
   if (saved) {

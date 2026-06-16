@@ -232,20 +232,20 @@ import LinkCreatedPopup from '@/components/LinkCreatedPopup.vue'
 import LinkErrorPopup from '@/components/ErrorCreatedPopup.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
 
-// 🔥 Базовые URL
+// Базовые URL
 const API_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const SHORT_LINK_DOMAIN = import.meta.env.VITE_SHORT_LINK_DOMAIN || 'http://localhost'
 
 const router = useRouter()
 
-// 🔥 Состояния UI (старые)
+// Состояния UI
 const showWIPPopup = ref(false)
 const showLinkPopup = ref(false)
 const showErrorPopup = ref(false)
 const createdLink = ref('')
 const errorUrl = ref('')
 
-// 🔥 Состояния для ToastNotification
+// Состояния для ToastNotification
 const deleteConfirmShow = ref(false)
 const linkCodeToDelete = ref<string | null>(null)
 
@@ -269,7 +269,7 @@ interface Link {
 
 const links = ref<Link[]>([])
 
-// 🔥 Копирование ссылки
+// Копирование ссылки
 const copyLink = async (shortUrl: string) => {
   try {
     await navigator.clipboard.writeText(shortUrl)
@@ -286,7 +286,7 @@ const copyLink = async (shortUrl: string) => {
   }
 }
 
-// 🔥 Показать попап подтверждения удаления
+// Подтверждение удаления
 const confirmDelete = (shortUrl: string) => {
   const code = shortUrl.split('/').pop()
   if (!code) return
@@ -294,7 +294,7 @@ const confirmDelete = (shortUrl: string) => {
   deleteConfirmShow.value = true
 }
 
-// 🔥 Выполнить удаление после подтверждения
+// Удаление после подтверждения
 const handleDeleteConfirmed = async () => {
   const code = linkCodeToDelete.value
   if (!code) return
@@ -343,7 +343,7 @@ const handleDeleteConfirmed = async () => {
   }
 }
 
-// 🔥 Получение всех ссылок
+// Получение всех ссылок
 const fetchLinks = async () => {
   const token = localStorage.getItem('access_token')?.trim()
   if (!token) return router.push('/auth')
@@ -378,7 +378,7 @@ const fetchLinks = async () => {
   }
 }
 
-// 🔥 Создание сокращенной ссылки
+// Создание сокращённой ссылки
 const handleShorten = async () => {
   if (!newLink.url) return
 

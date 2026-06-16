@@ -43,7 +43,7 @@ func (r *postgresClickRepo) GetStats(ctx context.Context, linkID int) (*domain.S
 	stats := &domain.StatsSummary{
 		ByCountry: make(map[string]int64),
 		ByDevice:  make(map[string]int64),
-		ByBrowser: make(map[string]int64), // ← Добавлено
+		ByBrowser: make(map[string]int64),
 	}
 
 	// Общее количество
@@ -87,7 +87,7 @@ func (r *postgresClickRepo) GetStats(ctx context.Context, linkID int) (*domain.S
 		stats.ByDevice[device] = count
 	}
 
-	// 🔥 По браузерам (новое)
+	// По браузерам
 	rows, err = r.db.QueryContext(ctx, `SELECT browser_name, COUNT(*) FROM click_stats 
 									   WHERE link_id = $1 AND browser_name IS NOT NULL 
 									   GROUP BY browser_name`, linkID)

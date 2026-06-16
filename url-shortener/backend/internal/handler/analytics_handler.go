@@ -45,7 +45,7 @@ func (h *AnalyticsHandler) GetOverview(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	log.Printf("✅ Analytics Overview: %+v", overview) // ← Добавь это
+	log.Printf("✅ Analytics Overview: %+v", overview)
 	WriteJSON(w, http.StatusOK, overview)
 }
 

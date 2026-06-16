@@ -35,13 +35,13 @@ func main() {
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	linkService := service.NewLinkService(linkRepo)
 
-	// 🔥 Исправлено: передаём ОБА репозитория
+	// Передаём оба репозитория
 	analyticsService := service.NewAnalyticsService(clickRepo, sessionRepo)
 
 	// Инициализация хендлеров
 	authHandler := handler.NewAuthHandler(authService)
 
-	// 🔥 Исправлено: передаём sessionRepo
+	// Передаём sessionRepo
 	linkHandler := handler.NewLinkHandler(linkService, analyticsService, sessionRepo, cfg.FrontendURL)
 
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
@@ -56,7 +56,7 @@ func main() {
 	cookieHandler := handler.NewCookieConsentHandler()
 	mux.HandleFunc("POST /api/cookies/consent", cookieHandler.SaveConsent)
 
-	// 🔥 Middleware авторизации (объявляем ПЕРЕД использованием)
+	// Middleware авторизации
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	// Защищенные роуты для ссылок
@@ -72,7 +72,7 @@ func main() {
 		authMiddleware.RequireAuth(http.HandlerFunc(linkHandler.DeleteLink)).ServeHTTP(w, r)
 	})
 
-	// 🔥 Защищенные роуты для аналитики
+	// Защищённые роуты для аналитики
 	mux.HandleFunc("GET /api/analytics/overview", func(w http.ResponseWriter, r *http.Request) {
 		authMiddleware.RequireAuth(http.HandlerFunc(analyticsHandler.GetOverview)).ServeHTTP(w, r)
 	})
@@ -97,7 +97,7 @@ func main() {
 	mux.HandleFunc("GET /api/resolve/{code}", linkHandler.ResolveLink)
 	mux.HandleFunc("POST /api/analytics/track", analyticsHandler.TrackSession)
 
-	// 🔥 Редиректы — ОБЯЗАТЕЛЬНО в конце
+	// Редиректы — в конце
 	mux.HandleFunc("/", linkHandler.Redirect)
 
 	// CORS Middleware

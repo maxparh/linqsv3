@@ -61,7 +61,7 @@ func (r *postgresUserRepo) GetByPhone(ctx context.Context, phone string) (*domai
         &user.Email, 
         &user.PasswordHash, 
         &user.CreatedAt,
-        &user.Phone, // ← добавляем сканирование phone
+        &user.Phone,
     )
     if err == sql.ErrNoRows {
         return nil, ErrUserNotFound

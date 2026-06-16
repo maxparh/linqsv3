@@ -29,7 +29,7 @@ onMounted(async () => {
     }
     const data = await res.json()
 
-    // 🔥 Исправлено: original_link → original_url
+    // Используем original_url
     const originalUrl = data.original_url
 
     if (!originalUrl) {
