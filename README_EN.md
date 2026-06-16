@@ -71,6 +71,21 @@ docker-compose up -d
 
 The full feature set, including advanced analytics, priority support, and additional capabilities, is available exclusively at [linqs.ru](https://linqs.ru).
 
+## Assigning an Admin
+
+The first admin must be assigned manually via PostgreSQL. Connect to the DB container and run:
+
+```bash
+# Enter the PostgreSQL container
+docker exec -it url-shortener-db psql -U appuser -d urlshortener
+
+# Add the role column if it doesn't exist
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
+
+# Assign admin role (replace the email with yours)
+UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+```
+
 ## License
 
 This project is licensed under the **MIT License**. You are free to modify, distribute, and use the code for both personal and commercial purposes, provided that the original copyright notice is included.
