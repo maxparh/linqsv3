@@ -10,7 +10,6 @@ services:
       POSTGRES_DB: urlshortener
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations/001_init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:
@@ -21,11 +20,18 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7.2-alpine
-    container_name: url-shortener-redis
+  migrations:
+    build:
+      context: .
+      dockerfile: migrator/Dockerfile
+    environment:
+      DATABASE_URL: postgres://appuser:apppassword@postgres:5432/urlshortener?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
+    restart: "no"
 
   backend:
     build:
@@ -43,6 +49,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - app-network
     restart: unless-stopped

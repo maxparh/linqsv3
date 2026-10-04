@@ -58,6 +58,8 @@ func main() {
 
 	// Middleware авторизации
 	authMiddleware := middleware.NewAuthMiddleware(authService)
+	mux.Handle("GET /api/profile", authMiddleware.RequireAuth(http.HandlerFunc(authHandler.GetProfile)))
+	mux.Handle("PUT /api/profile", authMiddleware.RequireAuth(http.HandlerFunc(authHandler.UpdateProfile)))
 
 	// Защищенные роуты для ссылок
 	mux.HandleFunc("GET /api/links", func(w http.ResponseWriter, r *http.Request) {

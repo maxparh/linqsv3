@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"url-shortener/internal/domain"
 	"url-shortener/internal/service"
@@ -29,6 +30,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.authService.Register(r.Context(), &req)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidProfile) {
+			WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 		WriteError(w, http.StatusConflict, err.Error())
 		return
 	}

@@ -1,4 +1,4 @@
--- Migration 002: Add analytics_sessions table for proper session tracking
+-- Migration 004: Add analytics_sessions table for proper session tracking
 
 -- Таблица сессий для аналитики
 CREATE TABLE IF NOT EXISTS analytics_sessions (
@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS analytics_sessions (
 
 -- Индексы для ускорения запросов
 CREATE INDEX IF NOT EXISTS idx_sessions_link_id ON analytics_sessions(link_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON analytics_sessions(session_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON analytics_sessions(started_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_last_activity ON analytics_sessions(last_activity_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_ip ON analytics_sessions(user_ip_hash);

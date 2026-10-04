@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-page-bg flex">
+  <div class="min-h-screen bg-page-bg flex flex-col md:flex-row">
     <!-- Боковое меню -->
-    <aside class="w-[224px] bg-white border-r border-card-border flex flex-col">
+    <aside class="w-full md:w-[224px] shrink-0 bg-white border-r border-card-border flex flex-col">
       <!-- Логотип -->
       <div class="p-6 flex items-center gap-3 pb-[80px]">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -48,12 +48,7 @@
 
       <!-- Профиль -->
       <div class="p-4 border-t border-card-border">
-        <div class="flex items-center gap-3 px-4 py-3">
-          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <span class="text-white font-inter font-semibold text-[14px]">A</span>
-          </div>
-          <span class="font-inter text-[17px] text-text-primary">admin</span>
-        </div>
+        <SidebarProfile :profile="profile" />
         <button
           @click="handleLogout"
           class="w-full flex items-center gap-3 px-4 py-7 text-error font-inter text-[17px] font-medium hover:bg-page-bg rounded-[10px] transition-colors"
@@ -65,39 +60,44 @@
     </aside>
 
     <!-- Основной контент -->
-    <main class="flex-1 p-8">
+    <main class="flex-1 min-w-0 p-4 md:p-8">
       <!-- Хедер -->
       <div class="mb-8">
         <h1 class="font-manrope font-bold text-[32px] text-text-primary">Настройки</h1>
       </div>
 
       <!-- Профиль и Тарифы -->
-      <div class="grid grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 2xl:grid-cols-2 gap-6 mb-6">
         <!-- Профиль -->
-        <div class="bg-white rounded-card border border-card-border p-6">
+        <div :aria-busy="profileLoading" class="min-w-0 bg-white rounded-card border border-card-border p-6">
           <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">Профиль</h2>
 
-          <div class="flex gap-4 mb-6">
+          <p v-if="profileLoading" role="status" class="text-text-secondary">Загрузка профиля...</p>
+          <div v-else-if="profileLoadError" role="alert" class="text-error">
+            <p>{{ profileLoadError }}</p>
+            <button type="button" @click="loadProfile" class="mt-3 text-primary underline">Повторить</button>
+          </div>
+          <template v-else>
+
+          <div class="flex flex-col sm:flex-row gap-4 mb-6">
             <!-- Аватар -->
             <div
-              class="w-16 h-16 rounded-full bg-page-bg flex items-center justify-center overflow-hidden"
+              class="w-16 h-16 shrink-0 rounded-full bg-primary flex items-center justify-center overflow-hidden"
             >
-              <!-- ICON: avatar_placeholder -->
-              <div class="w-16 h-16 bg-gray-200 rounded-full">
-                <img src="@/components/icons/avatar.png" alt="" />
-              </div>
+              <img v-if="profile.avatar" :src="profile.avatar" alt="Аватар профиля" class="w-full h-full object-cover" />
+              <span v-else class="text-white font-inter font-semibold text-[24px]">{{ profileInitial }}</span>
             </div>
 
-            <div class="flex-1">
-              <div class="flex gap-8 mb-2">
-                <div>
-                  <div class="font-inter text-[14px] text-text-secondary mb-1">Имя</div>
-                  <div class="font-inter text-[17px] text-text-primary font-medium">Александра</div>
-                </div>
-                <div>
-                  <div class="font-inter text-[14px] text-text-secondary mb-1">Фамилия</div>
-                  <div class="font-inter text-[17px] text-text-primary font-medium">Ермакова</div>
-                </div>
+            <div class="flex-1 min-w-0">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+                <label class="min-w-0">
+                  <span class="block font-inter text-[14px] text-text-secondary mb-1">Имя</span>
+                  <span class="block break-words font-inter text-[17px] text-text-primary font-medium">{{ profile.first_name || 'Не указано' }}</span>
+                </label>
+                <label class="min-w-0">
+                  <span class="block font-inter text-[14px] text-text-secondary mb-1">Фамилия</span>
+                  <span class="block break-words font-inter text-[17px] text-text-primary font-medium">{{ profile.last_name || 'Не указано' }}</span>
+                </label>
               </div>
               <div>
                 <div class="font-inter text-[14px] text-text-secondary mb-1">Тариф</div>
@@ -108,34 +108,37 @@
 
           <h3 class="font-inter text-[17px] font-medium text-text-primary mb-4">Профиль</h3>
 
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div
-              class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <label
+              class="min-w-0 min-h-16 px-4 py-3 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
             >
-              <div class="font-inter text-[14px] text-text-secondary mb-1">Электронная почта</div>
-              <div class="font-inter text-[17px] text-text-primary">yourperfectemail@gmail.com</div>
-            </div>
-            <div
-              class="h-16 px-4 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
+              <span class="font-inter text-[14px] text-text-secondary mb-1">Электронная почта</span>
+              <span class="break-all font-inter text-[17px] text-text-primary">{{ profile.email }}</span>
+            </label>
+            <label
+              class="min-w-0 min-h-16 px-4 py-3 border border-card-border rounded-[10px] bg-page-bg/50 flex flex-col justify-center"
             >
-              <div class="font-inter text-[14px] text-text-secondary mb-1">Номер телефона</div>
-              <div class="font-inter text-[17px] text-text-primary">+79529525252</div>
-            </div>
+              <span class="font-inter text-[14px] text-text-secondary mb-1">Номер телефона</span>
+              <span class="break-words font-inter text-[17px] text-text-primary">{{ profile.phone || 'Не указан' }}</span>
+            </label>
           </div>
 
           <button
-            @click="showEditProfile = true"
+            type="button"
+            ref="editProfileButton"
+            @click="startEditProfile"
             class="w-full h-10 bg-primary text-white rounded-[10px] font-inter text-[17px] font-medium hover:bg-[#013d41] transition-colors"
           >
             Редактировать
           </button>
+          </template>
         </div>
 
         <!-- Тарифы -->
         <div class="bg-white rounded-card border border-card-border p-6">
           <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">Тарифы</h2>
 
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Базовый -->
             <div class="border border-card-border rounded-[16px] p-4">
               <div class="font-inter text-[17px] font-medium text-text-primary mb-2">Базовый</div>
@@ -312,6 +315,8 @@
       </div>
     </main>
 
+    <ProfileEditPopup v-if="showEditProfile" :profile="profile" :saving="profileSaving" :error="profileSaveError" @close="cancelEditProfile" @save="saveProfile" />
+
     <!-- Toast уведомления -->
     <ToastNotification
       v-if="toastShow"
@@ -361,9 +366,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ToastNotification from '@/components/ToastNotification.vue'
+import ProfileEditPopup from '@/components/ProfileEditPopup.vue'
+import SidebarProfile from '@/components/SidebarProfile.vue'
+import type { Profile } from '@/types/profile'
 
 const router = useRouter()
 
@@ -374,6 +382,99 @@ const toastMessage = ref('')
 const toastType = ref<'success' | 'error' | 'info'>('success')
 const deleteAccountConfirmShow = ref(false)
 const showEditProfile = ref(false)
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const profile = reactive<Profile>({ first_name: '', last_name: '', email: '', phone: '', avatar: '' })
+const profileLoading = ref(true)
+const profileSaving = ref(false)
+const profileLoadError = ref('')
+const profileSaveError = ref('')
+const editProfileButton = ref<HTMLButtonElement | null>(null)
+const profileInitial = computed(() => Array.from(profile.first_name.trim())[0]?.toUpperCase() || '')
+
+const requestProfile = async (method: 'GET' | 'PUT', body?: Profile): Promise<Profile> => {
+  const token = localStorage.getItem('access_token')?.trim()
+  if (!token) {
+    await router.push('/auth')
+    throw new Error('Войдите в аккаунт')
+  }
+  const response = await fetch(`${API_URL}/profile`, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (response.status === 401) {
+    localStorage.removeItem('access_token')
+    await router.push('/auth')
+    throw new Error('Сессия истекла. Войдите снова')
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    const messages: Record<string, string> = {
+      'email already in use': 'Эта почта уже используется другим аккаунтом',
+      'phone already in use': 'Этот телефон уже используется другим аккаунтом',
+      'invalid profile: names must contain 1 to 100 characters': 'Имя и фамилия должны содержать от 1 до 100 символов',
+      'invalid profile: invalid email': 'Укажите корректную электронную почту',
+      'invalid profile: invalid phone': 'Укажите корректный телефон с кодом страны',
+      'invalid profile: invalid avatar': 'Не удалось сохранить фото. Выберите другое изображение',
+      'user not found': 'Профиль не найден',
+    }
+    throw new Error(messages[data.error] || 'Не удалось выполнить запрос. Попробуйте ещё раз')
+  }
+  const data = await response.json()
+  return { first_name: data.first_name, last_name: data.last_name, email: data.email, phone: data.phone || '', avatar: data.avatar || '' }
+}
+
+const loadProfile = async () => {
+  profileLoading.value = true
+  profileLoadError.value = ''
+  try {
+    Object.assign(profile, await requestProfile('GET'))
+  } catch (error) {
+    profileLoadError.value = error instanceof Error ? error.message : 'Не удалось загрузить профиль'
+  } finally {
+    profileLoading.value = false
+  }
+}
+
+const startEditProfile = () => {
+  profileSaveError.value = ''
+  showEditProfile.value = true
+}
+
+const cancelEditProfile = async () => {
+  showEditProfile.value = false
+  profileSaveError.value = ''
+  await nextTick()
+  editProfileButton.value?.focus()
+}
+
+const saveProfile = async (profileDraft: Profile) => {
+  if (!showEditProfile.value || profileSaving.value) return
+  profileSaving.value = true
+  profileSaveError.value = ''
+  try {
+    const updated = await requestProfile('PUT', {
+      first_name: profileDraft.first_name.trim(),
+      last_name: profileDraft.last_name.trim(),
+      email: profileDraft.email.trim(),
+      phone: profileDraft.phone.trim(),
+      avatar: profileDraft.avatar,
+    })
+    Object.assign(profile, updated)
+    await cancelEditProfile()
+    toastTitle.value = 'Профиль обновлён'
+    toastMessage.value = 'Изменения сохранены'
+    toastType.value = 'success'
+    toastShow.value = true
+  } catch (error) {
+    profileSaveError.value = error instanceof Error ? error.message : 'Не удалось сохранить профиль'
+  } finally {
+    profileSaving.value = false
+  }
+}
+
+onMounted(loadProfile)
 
 // Настройки
 const settings = reactive({

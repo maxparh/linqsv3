@@ -6,5 +6,4 @@ ALTER COLUMN ip_address TYPE VARCHAR(64) USING ip_address::TEXT;
 --    Но для новых записей это не нужно, т.к. мы сразу пишем хэш
 
 -- 3. Добавляем индекс для ускорения аналитики (опционально)
-CREATE INDEX IF NOT EXISTS idx_click_stats_link_id ON click_stats(link_id);
 CREATE INDEX IF NOT EXISTS idx_click_stats_clicked_at ON click_stats(clicked_at);

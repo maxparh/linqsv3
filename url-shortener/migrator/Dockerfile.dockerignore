@@ -1,0 +1,8 @@
+**
+!migrator/
+!migrator/Dockerfile
+!migrator/requirements.txt
+!migrator/migrate.py
+!backend/
+!backend/migrations/
+!backend/migrations/*.sql

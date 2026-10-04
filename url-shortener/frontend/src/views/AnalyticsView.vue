@@ -43,12 +43,7 @@
       </nav>
 
       <div class="p-4 border-t border-card-border">
-        <div class="flex items-center gap-3 px-4 py-3">
-          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <span class="text-white font-inter font-semibold text-[14px]">A</span>
-          </div>
-          <span class="font-inter text-[17px] text-text-primary">admin</span>
-        </div>
+        <SidebarProfile />
         <button
           @click="handleLogout"
           class="w-full flex items-center gap-3 px-4 py-7 text-error font-inter text-[17px] font-medium hover:bg-page-bg rounded-[10px] transition-colors"
@@ -360,6 +355,7 @@
 </template>
 
 <script setup lang="ts">
+import SidebarProfile from '@/components/SidebarProfile.vue'
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'

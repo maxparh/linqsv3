@@ -1,22 +1,23 @@
 package service
 
 import (
-    "context"
-    "errors"
-    "log"
-    "strings"
-    "time"
-    "url-shortener/internal/domain"
-    "url-shortener/internal/repository"
+	"context"
+	"errors"
+	"log"
+	"strings"
+	"time"
+	"url-shortener/internal/domain"
+	"url-shortener/internal/repository"
 
-    "github.com/golang-jwt/jwt/v5"
-    "golang.org/x/crypto/bcrypt"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var ErrInvalidCredentials = errors.New("invalid email or password")
 
-
 type AuthService interface {
+	GetProfile(ctx context.Context, userID int) (*domain.User, error)
+	UpdateProfile(ctx context.Context, userID int, req *domain.UpdateProfileRequest) (*domain.User, error)
 	Register(ctx context.Context, req *domain.CreateUserRequest) (*domain.User, error)
 	Login(ctx context.Context, req *domain.LoginRequest) (*domain.AuthTokens, error)
 	ValidateToken(tokenString string) (*domain.Claims, error)
@@ -37,8 +38,14 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string, expira
 }
 
 func (s *authService) Register(ctx context.Context, req *domain.CreateUserRequest) (*domain.User, error) {
+	profile, err := validateProfile(domain.UpdateProfileRequest{
+		FirstName: req.FirstName, LastName: req.LastName, Email: req.Email, Phone: req.Phone,
+	})
+	if err != nil {
+		return nil, err
+	}
 	// Проверка, существует ли пользователь
-	_, err := s.userRepo.GetByEmail(ctx, req.Email)
+	_, err = s.userRepo.GetByEmail(ctx, profile.Email)
 	if err == nil {
 		return nil, errors.New("user already exists")
 	}
@@ -53,9 +60,11 @@ func (s *authService) Register(ctx context.Context, req *domain.CreateUserReques
 	}
 
 	user := &domain.User{
-    Email:        req.Email,
-    PasswordHash: string(hash),
-    Phone:        req.Phone,
+		Email:        profile.Email,
+		PasswordHash: string(hash),
+		Phone:        profile.Phone,
+		FirstName:    profile.FirstName,
+		LastName:     profile.LastName,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {

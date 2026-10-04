@@ -7,8 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_email ON users(email);
-
 CREATE TABLE IF NOT EXISTS links (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -18,8 +16,7 @@ CREATE TABLE IF NOT EXISTS links (
     expires_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_links_short_code ON links(short_code);
-CREATE INDEX idx_links_user_id ON links(user_id);
+CREATE INDEX IF NOT EXISTS idx_links_user_id ON links(user_id);
 
 CREATE TABLE IF NOT EXISTS click_stats (
     id SERIAL PRIMARY KEY,
@@ -32,4 +29,4 @@ CREATE TABLE IF NOT EXISTS click_stats (
     clicked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_clicks_link_id ON click_stats(link_id);
+CREATE INDEX IF NOT EXISTS idx_clicks_link_id ON click_stats(link_id);

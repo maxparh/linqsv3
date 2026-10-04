@@ -18,6 +18,7 @@
       <input
         v-model="form.firstName"
         type="text"
+        maxlength="100"
         placeholder="Иван"
         class="w-full h-10 px-4 bg-white border border-[#E2E8F0] rounded-[10px] text-[17px] text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:border-[#014751] transition-colors"
         required
@@ -30,6 +31,7 @@
       <input
         v-model="form.lastName"
         type="text"
+        maxlength="100"
         placeholder="Иванов"
         class="w-full h-10 px-4 bg-white border border-[#E2E8F0] rounded-[10px] text-[17px] text-[#0F172A] placeholder:text-[#64748B] focus:outline-none focus:border-[#014751] transition-colors"
         required
@@ -254,7 +256,9 @@ const handleSubmit = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: form.email,
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+        email: form.email.trim(),
         password: form.password,
         phone: phonePayload,
       }),
@@ -286,7 +290,7 @@ const handleSubmit = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        identifier: form.email,
+        identifier: form.email.trim(),
         password: form.password,
       }),
     })
