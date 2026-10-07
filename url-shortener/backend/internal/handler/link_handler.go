@@ -191,7 +191,7 @@ func (h *LinkHandler) recordSession(ctx context.Context, linkID int, r *http.Req
 	}
 
 	// 3. SessionID
-	sessionRaw := ipHash + ua
+	sessionRaw := fmt.Sprintf("events-v1:%d:%s:%s", linkID, ipHash, ua)
 	hash := sha256.Sum256([]byte(sessionRaw))
 	sessionID := fmt.Sprintf("%x", hash)
 

@@ -121,14 +121,18 @@ func (r *postgresSessionRepo) GetAnalyticsByLinkID(ctx context.Context, linkID i
 }
 
 func (r *postgresSessionRepo) RecordSession(ctx context.Context, linkID int, sessionID string, ipHash string, countryCode string, deviceType string, browserName string) error {
-	query := `INSERT INTO analytics_sessions 
-        (link_id, session_id, user_ip_hash, country_code, device_type, browser_name, is_bounce, page_views, started_at, last_activity_at) 
-        VALUES ($1, $2, $3, $4, $5, $6, true, 1, NOW(), NOW())
+	query := `WITH recorded_session AS (
+        INSERT INTO analytics_sessions
+        (link_id, session_id, user_ip_hash, country_code, device_type, browser_name, is_bounce, page_views, started_at, last_activity_at, event_based)
+        VALUES ($1, $2, $3, $4, $5, $6, true, 1, NOW(), NOW(), true)
         ON CONFLICT (session_id) DO UPDATE SET
-            link_id = EXCLUDED.link_id,
             page_views = analytics_sessions.page_views + 1,
             last_activity_at = NOW(),
-            is_bounce = false`
+            is_bounce = false
+        RETURNING session_id
+    )
+    INSERT INTO analytics_click_events (session_id, link_id, country_code, device_type)
+    SELECT session_id, $1, $4, $5 FROM recorded_session`
 
 	_, err := r.db.ExecContext(ctx, query, linkID, sessionID, ipHash, countryCode, deviceType, browserName)
 	return err
@@ -138,17 +142,20 @@ func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, 
 	var o domain.AnalyticsOverview
 
 	query := `
-        SELECT 
-            COALESCE(SUM(s.page_views), 0)::bigint as total_clicks,
-            COUNT(DISTINCT s.session_id)::bigint as unique_clicks,
+        WITH clicks AS (
+            SELECT c.* FROM analytics_click_totals c JOIN links l ON c.link_id = l.id
+            WHERE l.user_id = $1 AND c.clicked_at >= NOW() - make_interval(days => $2)
+        )
+        SELECT
+            (SELECT COALESCE(SUM(clicks), 0)::bigint FROM clicks) as total_clicks,
+            COUNT(s.session_id)::bigint as unique_clicks,
             COALESCE(AVG(s.total_time_on_site)::float, 0) as avg_time_on_site,
             CASE 
                 WHEN COUNT(DISTINCT s.session_id) = 0 THEN 0 
                 ELSE COUNT(DISTINCT CASE WHEN s.is_bounce THEN s.session_id END) * 100.0 / COUNT(DISTINCT s.session_id) 
             END as bounce_rate
         FROM analytics_sessions s
-        JOIN links l ON s.link_id = l.id
-        WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2)
+        WHERE s.session_id IN (SELECT session_id FROM clicks)
     `
 	err := r.db.QueryRowContext(ctx, query, userID, days).Scan(&o.TotalClicks, &o.UniqueClicks, &o.AvgTimeOnSite, &o.BounceRate)
 	return &o, err
@@ -156,11 +163,12 @@ func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, 
 
 func (r *postgresSessionRepo) GetClicksOverTime(ctx context.Context, userID int, days int) (*domain.ClicksOverTime, error) {
 	rows, err := r.db.QueryContext(ctx, `
-        SELECT to_char(s.started_at, 'DD.MM') as day, SUM(s.page_views) as clicks
-        FROM analytics_sessions s
+        SELECT to_char((s.clicked_at AT TIME ZONE 'Europe/Moscow')::date, 'DD.MM'), SUM(s.clicks)
+        FROM analytics_click_totals s
         JOIN links l ON s.link_id = l.id
-        WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2)
-        GROUP BY day ORDER BY day
+        WHERE l.user_id = $1 AND s.clicked_at >= NOW() - make_interval(days => $2)
+        GROUP BY (s.clicked_at AT TIME ZONE 'Europe/Moscow')::date
+        ORDER BY (s.clicked_at AT TIME ZONE 'Europe/Moscow')::date
     `, userID, days)
 	if err != nil {
 		return nil, err
@@ -177,15 +185,15 @@ func (r *postgresSessionRepo) GetClicksOverTime(ctx context.Context, userID int,
 		res.Labels = append(res.Labels, day)
 		res.Values = append(res.Values, clicks)
 	}
-	return &res, nil
+	return &res, rows.Err()
 }
 
 func (r *postgresSessionRepo) GetTopLocations(ctx context.Context, userID int, days int, limit int) ([]*domain.LocationStat, error) {
 	rows, err := r.db.QueryContext(ctx, `
-        SELECT s.country_code, COUNT(*), ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2)
-        FROM analytics_sessions s JOIN links l ON s.link_id = l.id
-        WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2) AND s.country_code != ''
-        GROUP BY s.country_code ORDER BY count DESC LIMIT $3
+        SELECT s.country_code, SUM(s.clicks) AS clicks, ROUND(SUM(s.clicks) * 100.0 / SUM(SUM(s.clicks)) OVER(), 2)
+        FROM analytics_click_totals s JOIN links l ON s.link_id = l.id
+        WHERE l.user_id = $1 AND s.clicked_at >= NOW() - make_interval(days => $2) AND s.country_code != ''
+        GROUP BY s.country_code ORDER BY clicks DESC LIMIT $3
     `, userID, days, limit)
 	if err != nil {
 		return nil, err
@@ -210,10 +218,10 @@ func (r *postgresSessionRepo) GetTopLocations(ctx context.Context, userID int, d
 
 func (r *postgresSessionRepo) GetDeviceStats(ctx context.Context, userID int, days int) ([]*domain.DeviceStat, error) {
 	rows, err := r.db.QueryContext(ctx, `
-        SELECT s.device_type, COUNT(*), ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2)
-        FROM analytics_sessions s JOIN links l ON s.link_id = l.id
-        WHERE l.user_id = $1 AND s.started_at >= NOW() - make_interval(days => $2) AND s.device_type != ''
-        GROUP BY s.device_type ORDER BY count DESC
+        SELECT s.device_type, SUM(s.clicks) AS clicks, ROUND(SUM(s.clicks) * 100.0 / SUM(SUM(s.clicks)) OVER(), 2)
+        FROM analytics_click_totals s JOIN links l ON s.link_id = l.id
+        WHERE l.user_id = $1 AND s.clicked_at >= NOW() - make_interval(days => $2) AND s.device_type != ''
+        GROUP BY s.device_type ORDER BY clicks DESC
     `, userID, days)
 	if err != nil {
 		return nil, err
