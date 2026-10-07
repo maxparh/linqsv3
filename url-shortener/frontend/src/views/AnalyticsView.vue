@@ -219,7 +219,7 @@
         </div>
 
         <!-- 4. Топ локаций -->
-        <div class="bg-white rounded-card border border-card-border p-6">
+        <div class="flex flex-col bg-white rounded-card border border-card-border p-6">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
               <img
@@ -260,7 +260,7 @@
             href="https://db-ip.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-block mt-4 font-inter text-[12px] text-text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4 transition-colors"
+            class="self-start mt-auto pt-4 font-inter text-[12px] text-text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4 transition-colors"
           >IP Geolocation by DB-IP</a>
         </div>
 

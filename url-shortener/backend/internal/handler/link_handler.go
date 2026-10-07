@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"url-shortener/internal/domain"
+	"url-shortener/internal/geoip"
 	"url-shortener/internal/middleware"
 	"url-shortener/internal/repository"
 	"url-shortener/internal/service"
@@ -21,6 +22,8 @@ type LinkHandler struct {
 	analyticsService service.AnalyticsService
 	sessionRepo      repository.SessionRepository
 	baseURL          string
+	GeoIP            *geoip.Resolver
+	TrustedProxyHost string
 }
 
 // Конструктор
@@ -170,11 +173,8 @@ func (h *LinkHandler) recordSession(ctx context.Context, linkID int, r *http.Req
 	log.Printf("📝 [Async] Starting recordSession for linkID=%d...", linkID)
 
 	// 1. Получаем IP
-	ip := r.RemoteAddr
-	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-		ip = strings.Split(forwarded, ",")[0]
-	}
-	ipHash := hashIP(strings.TrimSpace(ip))
+	ip := geoip.ClientIP(r, h.TrustedProxyHost)
+	ipHash := hashIP(ip.String())
 
 	// 2. UserAgent
 	ua := r.UserAgent()
@@ -185,7 +185,10 @@ func (h *LinkHandler) recordSession(ctx context.Context, linkID int, r *http.Req
 		deviceType = "mobile"
 	}
 	browser := parseBrowser(ua)
-	country := "RU"
+	country := ""
+	if h.GeoIP != nil {
+		country = h.GeoIP.Country(ip)
+	}
 
 	// 3. SessionID
 	sessionRaw := ipHash + ua

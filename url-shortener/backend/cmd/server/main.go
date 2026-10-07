@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 	"url-shortener/internal/config"
+	"url-shortener/internal/geoip"
 	"url-shortener/internal/handler"
 	"url-shortener/internal/middleware"
 	"url-shortener/internal/repository"
@@ -43,6 +44,20 @@ func main() {
 
 	// Передаём sessionRepo
 	linkHandler := handler.NewLinkHandler(linkService, analyticsService, sessionRepo, cfg.FrontendURL)
+	geoPath := os.Getenv("GEOIP_DB_PATH")
+	if geoPath == "" {
+		geoPath = "../geoip/dbip-country-lite.mmdb"
+	}
+	geoDB, err := geoip.Open(geoPath)
+	if err != nil {
+		log.Printf("GeoIP database unavailable; downloading on startup: %v", err)
+		geoDB = &geoip.Resolver{}
+	}
+	defer geoDB.Close()
+	stopGeoUpdates := geoDB.StartUpdater(geoPath)
+	defer stopGeoUpdates()
+	linkHandler.GeoIP = geoDB
+	linkHandler.TrustedProxyHost = os.Getenv("TRUSTED_PROXY_HOST")
 
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 

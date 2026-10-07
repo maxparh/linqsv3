@@ -199,7 +199,11 @@ func (r *postgresSessionRepo) GetTopLocations(ctx context.Context, userID int, d
 		var cnt int
 		var pct float64
 		rows.Scan(&code, &cnt, &pct)
-		stats = append(stats, &domain.LocationStat{Country: names[code], CountryCode: code, Percent: pct})
+		name := names[code]
+		if name == "" {
+			name = code
+		}
+		stats = append(stats, &domain.LocationStat{Country: name, CountryCode: code, Percent: pct})
 	}
 	return stats, nil
 }
