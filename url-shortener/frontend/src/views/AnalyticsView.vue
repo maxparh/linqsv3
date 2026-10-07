@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-page-bg flex">
-    <aside class="w-[224px] bg-white border-r border-card-border flex flex-col">
+  <div class="analytics-page min-h-screen bg-page-bg flex">
+    <aside class="analytics-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
       <div class="p-6 flex items-center gap-3 pb-[80px]">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <img src="@/components/icons/linqs_logo.svg" alt="" />
@@ -55,9 +55,9 @@
     </aside>
 
     <!-- Основной контент -->
-    <main class="flex-1 p-8">
+    <main class="analytics-main flex-1 p-8">
       <!-- Шапка -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="analytics-header flex items-center justify-between mb-6">
         <h1 class="font-manrope font-bold text-[32px] text-text-primary">Аналитика / Все</h1>
         <button
           @click="showWIPPopup = true"
@@ -68,7 +68,7 @@
       </div>
 
       <!-- Фильтры и поиск -->
-      <div class="flex items-center gap-4 mb-8">
+      <div class="analytics-filters flex items-center gap-4 mb-8">
         <div class="flex-1 relative">
           <input
             v-model="searchQuery"
@@ -103,7 +103,7 @@
       </div>
 
       <!-- Основной график -->
-      <div class="bg-white rounded-card border border-card-border p-6 mb-6">
+      <div class="analytics-chart bg-white rounded-card border border-card-border p-6 mb-6">
         <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">
           График количества переходов
         </h2>
@@ -114,7 +114,7 @@
       </div>
 
       <!-- Сетка виджетов -->
-      <div class="grid grid-cols-3 gap-6">
+      <div class="analytics-widgets grid grid-cols-3 gap-6">
         <!-- 1. Переходы -->
         <div class="bg-white rounded-card border border-card-border p-6">
           <div class="flex items-center justify-between mb-4">
@@ -256,6 +256,12 @@
               <span class="text-text-secondary font-medium">{{ loc.percent.toFixed(1) }}%</span>
             </div>
           </div>
+          <a
+            href="https://db-ip.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block mt-4 font-inter text-[12px] text-text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4 transition-colors"
+          >IP Geolocation by DB-IP</a>
         </div>
 
         <!-- 5. Устройства -->
@@ -278,9 +284,9 @@
               <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5 flex-shrink-0" />
             </button>
           </div>
-          <div class="flex items-center gap-4">
-            <div ref="donutChartRef" class="h-[160px] w-[160px]"></div>
-            <div class="space-y-2">
+          <div class="device-breakdown flex items-center gap-4">
+            <div ref="donutChartRef" class="shrink-0 h-[160px] w-[160px]"></div>
+            <div class="device-legend min-w-0 flex-1 space-y-2">
               <div
                 v-for="dev in devices"
                 :key="dev.name"
@@ -330,7 +336,7 @@
     <!-- Попап "В разработке" -->
     <div
       v-if="showWIPPopup"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
       @click.self="showWIPPopup = false"
     >
       <div class="bg-white rounded-card border border-card-border p-8 max-w-[400px] text-center">
@@ -356,7 +362,7 @@
 
 <script setup lang="ts">
 import SidebarProfile from '@/components/SidebarProfile.vue'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import {
@@ -378,6 +384,7 @@ const lineChartRef = ref<HTMLElement | null>(null)
 const donutChartRef = ref<HTMLElement | null>(null)
 let lineChart: echarts.ECharts | null = null
 let donutChart: echarts.ECharts | null = null
+let chartObserver: ResizeObserver | undefined
 
 // Данные из API
 const overview = ref<AnalyticsOverview>({
@@ -534,7 +541,7 @@ const initCharts = () => {
   if (lineChartRef.value && !lineChart) {
     lineChart = echarts.init(lineChartRef.value)
     lineChart.setOption({
-      tooltip: { trigger: 'axis' },
+      tooltip: { trigger: 'axis', confine: true },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
@@ -618,10 +625,18 @@ onMounted(() => {
   initCharts()
   loadAllData()
 
-  window.addEventListener('resize', () => {
+  chartObserver = new ResizeObserver(() => {
     lineChart?.resize()
     donutChart?.resize()
   })
+  if (lineChartRef.value) chartObserver.observe(lineChartRef.value)
+  if (donutChartRef.value) chartObserver.observe(donutChartRef.value)
+})
+
+onBeforeUnmount(() => {
+  chartObserver?.disconnect()
+  lineChart?.dispose()
+  donutChart?.dispose()
 })
 
 // Перезагрузка при смене периода
@@ -629,3 +644,165 @@ watch(selectedDays, () => {
   loadAllData()
 })
 </script>
+
+<style scoped>
+.analytics-main,
+.analytics-widgets > *,
+.analytics-widgets .flex > div {
+  min-width: 0;
+}
+
+.analytics-sidebar {
+  flex-shrink: 0;
+}
+
+.analytics-header {
+  gap: 16px;
+}
+
+.analytics-header > button,
+.analytics-widgets button,
+.analytics-widgets img,
+.device-legend span:first-child,
+.device-legend span:last-child {
+  flex-shrink: 0;
+}
+
+.analytics-widgets {
+  overflow-wrap: anywhere;
+}
+
+.analytics-widgets .justify-between {
+  gap: 12px;
+}
+
+@media (width < 1280px) {
+  .analytics-main {
+    padding: 24px;
+  }
+
+  .analytics-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .analytics-header h1 {
+    font-size: 28px;
+  }
+
+  .analytics-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .analytics-filters > div {
+    grid-column: 1 / -1;
+  }
+
+  .analytics-filters > button {
+    justify-content: space-between;
+  }
+
+  .analytics-widgets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .analytics-widgets > *,
+  .analytics-chart {
+    padding: 20px;
+  }
+
+  .device-breakdown {
+    flex-direction: column;
+  }
+
+  .device-legend {
+    width: 100%;
+  }
+}
+
+@media (width < 830px) {
+  .analytics-page {
+    flex-direction: column;
+  }
+
+  .analytics-sidebar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 40;
+    width: 100%;
+    border-right: 0;
+    border-top: 1px solid var(--color-card-border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .analytics-sidebar > div:first-child,
+  .analytics-sidebar > div:last-child {
+    display: none;
+  }
+
+  .analytics-sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .analytics-sidebar nav > a {
+    width: 100%;
+    min-width: 0;
+    height: 56px;
+    margin: 0;
+    padding: 4px 2px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .analytics-sidebar nav img {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    filter: grayscale(1);
+    opacity: 0.65;
+  }
+
+  .analytics-sidebar nav > a[aria-current='page'] {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .analytics-sidebar nav > a[aria-current='page'] img {
+    filter: brightness(0) saturate(100%) invert(20%) sepia(32%) saturate(1623%) hue-rotate(143deg) brightness(92%) contrast(99%);
+    opacity: 1;
+  }
+
+  .analytics-main {
+    padding: 24px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .analytics-header h1 {
+    font-size: 24px;
+  }
+
+  .analytics-header > button {
+    width: 100%;
+  }
+
+  .analytics-widgets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analytics-widgets > *,
+  .analytics-chart {
+    padding: 16px;
+  }
+}
+</style>

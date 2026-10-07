@@ -336,7 +336,6 @@
 
     <!-- Попапы -->
     <ToastNotification
-      v-if="deleteConfirmShow"
       :show="deleteConfirmShow"
       title="Удалить ссылку?"
       message="Это действие нельзя отменить"
@@ -347,8 +346,7 @@
       @close="deleteConfirmShow = false"
     />
     <ToastNotification
-      v-if="toastShow && !deleteConfirmShow"
-      :show="toastShow"
+      :show="toastShow && !deleteConfirmShow"
       :title="toastTitle"
       :message="toastMessage"
       :duration="3000"

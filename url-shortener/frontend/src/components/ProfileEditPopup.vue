@@ -1,6 +1,7 @@
 <template>
   <Teleport to="body">
     <dialog ref="dialog" aria-labelledby="profile-edit-title" :aria-busy="saving || processingAvatar"
+      :class="{ 'is-closing': closing }"
       class="profile-dialog m-auto w-[calc(100%-2rem)] max-w-[480px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-card border border-card-border bg-white p-6 sm:p-8 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
       @cancel.prevent="close" @click="handleBackdropClick">
       <button type="button" aria-label="Закрыть" title="Закрыть" :disabled="busy" @click="close"
@@ -69,7 +70,23 @@ const firstNameInput = ref<HTMLInputElement | null>(null)
 const avatarInput = ref<HTMLInputElement | null>(null)
 const processingAvatar = ref(false)
 const avatarError = ref('')
-const busy = computed(() => props.saving || processingAvatar.value)
+const closing = ref(false)
+const busy = computed(() => props.saving || processingAvatar.value || closing.value)
+let closePromise: Promise<void> | undefined
+
+const closeWithAnimation = (): Promise<void> => {
+  if (closePromise) return closePromise
+  closing.value = true
+  const element = dialog.value
+  if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve()
+  const animation = element.animate(
+    [{ opacity: 1, transform: 'translateY(0) scale(1)' }, { opacity: 0, transform: 'translateY(12px) scale(.97)' }],
+    { duration: 200, easing: 'ease-out', fill: 'forwards' },
+  )
+  closePromise = animation.finished.then(() => {}, () => {})
+  return closePromise
+}
+defineExpose({ closeWithAnimation })
 let previousOverflow = ''
 
 onMounted(() => {
@@ -127,6 +144,8 @@ const selectAvatar = async (event: Event) => {
 
 <style scoped>
 .profile-dialog[open] { animation: profile-appear 200ms ease-out; }
+.profile-dialog[open]::backdrop { animation: backdrop-appear 200ms ease-out; }
+.profile-dialog.is-closing::backdrop { animation: backdrop-disappear 200ms ease-out forwards; }
 .profile-input {
   display: block;
   width: 100%;
@@ -142,5 +161,7 @@ const selectAvatar = async (event: Event) => {
 }
 .profile-input:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
 @keyframes profile-appear { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .profile-dialog[open] { animation: none; } }
+@keyframes backdrop-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes backdrop-disappear { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .profile-dialog[open], .profile-dialog[open]::backdrop { animation: none; } }
 </style>

@@ -315,11 +315,10 @@
       </div>
     </main>
 
-    <ProfileEditPopup v-if="showEditProfile" :profile="profile" :saving="profileSaving" :error="profileSaveError" @close="cancelEditProfile" @save="saveProfile" />
+    <ProfileEditPopup v-if="showEditProfile" ref="profilePopup" :profile="profile" :saving="profileSaving" :error="profileSaveError" @close="cancelEditProfile" @save="saveProfile" />
 
     <!-- Toast уведомления -->
     <ToastNotification
-      v-if="toastShow"
       :show="toastShow"
       :title="toastTitle"
       :message="toastMessage"
@@ -382,6 +381,7 @@ const toastMessage = ref('')
 const toastType = ref<'success' | 'error' | 'info'>('success')
 const deleteAccountConfirmShow = ref(false)
 const showEditProfile = ref(false)
+const profilePopup = ref<InstanceType<typeof ProfileEditPopup> | null>(null)
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const profile = reactive<Profile>({ first_name: '', last_name: '', email: '', phone: '', avatar: '' })
@@ -443,6 +443,7 @@ const startEditProfile = () => {
 }
 
 const cancelEditProfile = async () => {
+  await profilePopup.value?.closeWithAnimation()
   showEditProfile.value = false
   profileSaveError.value = ''
   await nextTick()

@@ -1,30 +1,14 @@
 <template>
   <Teleport to="body">
-    <Transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
+    <Transition name="toast-popup" appear>
       <div
         v-if="visible"
         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
         @click.self="handleOverlayClick"
       >
         <!-- Модалка с анимацией всплытия -->
-        <Transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 translate-y-4 scale-95"
-          enter-to-class="opacity-100 translate-y-0 scale-100"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="opacity-100 scale-100"
-          leave-to-class="opacity-0 scale-95"
-        >
           <div
-            v-show="visible"
-            class="bg-white rounded-card border border-card-border p-8 max-w-[320px] w-full text-center relative shadow-2xl"
+            class="toast-panel bg-white rounded-card border border-card-border p-8 max-w-[320px] w-full text-center relative shadow-2xl"
           >
             <!-- Иконка: динамическая -->
             <div
@@ -126,14 +110,13 @@
               </svg>
             </button>
           </div>
-        </Transition>
       </div>
     </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onBeforeUnmount } from 'vue'
 
 // Тип для кнопки тоста
 export interface ToastButton {
@@ -221,6 +204,7 @@ const startTimer = () => {
 }
 
 const close = () => {
+  if (!visible.value) return
   visible.value = false
   if (timeoutId) {
     clearTimeout(timeoutId)
@@ -267,9 +251,39 @@ watch(
     if (newVal) {
       showWithAnimation()
     } else {
-      close()
+      visible.value = false
+      if (timeoutId) clearTimeout(timeoutId)
     }
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {
+  if (timeoutId) clearTimeout(timeoutId)
+})
 </script>
+
+<style scoped>
+.toast-popup-enter-active,
+.toast-popup-leave-active {
+  transition: opacity 200ms ease-out;
+}
+.toast-popup-enter-active .toast-panel,
+.toast-popup-leave-active .toast-panel {
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+.toast-popup-leave-active { pointer-events: none; }
+.toast-popup-enter-from,
+.toast-popup-leave-to { opacity: 0; }
+.toast-popup-enter-from .toast-panel,
+.toast-popup-leave-to .toast-panel {
+  opacity: 0;
+  transform: translateY(12px) scale(.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-popup-enter-active,
+  .toast-popup-leave-active,
+  .toast-popup-enter-active .toast-panel,
+  .toast-popup-leave-active .toast-panel { transition-duration: 0ms; }
+}
+</style>

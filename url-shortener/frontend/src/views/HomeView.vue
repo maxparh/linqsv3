@@ -150,7 +150,6 @@
 
     <!-- 🔥 Попап подтверждения удаления -->
     <ToastNotification
-      v-if="deleteConfirmShow"
       :show="deleteConfirmShow"
       title="Удалить ссылку?"
       message="Это действие нельзя отменить"
@@ -173,8 +172,7 @@
 
     <!-- 🔥 Универсальный тост для уведомлений -->
     <ToastNotification
-      v-if="toastShow && !deleteConfirmShow"
-      :show="toastShow"
+      :show="toastShow && !deleteConfirmShow"
       :title="toastTitle"
       :message="toastMessage"
       :duration="3000"
