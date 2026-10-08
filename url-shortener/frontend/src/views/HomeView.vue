@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-page-bg flex">
+  <div class="responsive-page home-page min-h-screen bg-page-bg flex">
     <!-- Боковое меню -->
     <aside class="page-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
       <!-- Логотип -->
@@ -68,7 +68,7 @@
 
       <!-- Создание ссылки -->
       <div class="bg-white rounded-card border border-card-border p-6 mb-8">
-        <div class="flex gap-4 mb-4">
+        <div class="shorten-form flex gap-4 mb-4">
           <input
             v-model="newLink.url"
             type="url"
@@ -102,19 +102,19 @@
           <div
             v-for="link in links"
             :key="link.id"
-            class="flex items-center justify-between py-3 border-b border-card-border last:border-0"
+            class="home-link-row flex items-center justify-between py-3 border-b border-card-border last:border-0"
           >
             <div>
-              <div class="font-inter text-[17px] font-medium text-text-primary mb-1">
+              <div :title="link.shortUrl" class="truncate font-inter text-[17px] font-medium text-text-primary mb-1">
                 {{ link.shortUrl }}
               </div>
-              <div class="font-inter text-[14px] text-text-secondary">
+              <div :title="link.originalUrl" class="truncate font-inter text-[14px] text-text-secondary">
                 {{ link.originalUrl }}
               </div>
             </div>
 
             <div class="flex items-center gap-6">
-              <div class="text-right">
+              <div class="flex items-baseline gap-2 whitespace-nowrap">
                 <div class="font-inter text-[17px] text-text-primary">
                   {{ link.clicks }}
                 </div>

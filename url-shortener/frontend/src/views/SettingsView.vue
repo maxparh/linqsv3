@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-page-bg flex flex-col md:flex-row">
+  <div class="responsive-page settings-page min-h-screen bg-page-bg flex">
     <!-- Боковое меню -->
     <aside class="page-sidebar settings-sidebar w-full md:w-[224px] shrink-0 bg-white border-r border-card-border flex flex-col">
       <!-- Логотип -->
@@ -138,7 +138,7 @@
         <div class="bg-white rounded-card border border-card-border p-6">
           <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">Тарифы</h2>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="tariff-grid grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Базовый -->
             <div class="border border-card-border rounded-[16px] p-4">
               <div class="font-inter text-[17px] font-medium text-text-primary mb-2">Базовый</div>
@@ -313,6 +313,9 @@
           </button>
         </div>
       </div>
+      <button type="button" @click="handleLogout" class="mobile-settings-logout items-center justify-center gap-3 w-full mt-6 min-h-11 text-error font-inter">
+        <img src="@/components/icons/logout_btn.svg" alt="" class="w-6 h-6" />Выйти из аккаунта
+      </button>
     </main>
 
     <ProfileEditPopup v-if="showEditProfile" ref="profilePopup" :profile="profile" :saving="profileSaving" :error="profileSaveError" @close="cancelEditProfile" @save="saveProfile" />

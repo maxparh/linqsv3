@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-page-bg flex">
+  <div class="responsive-page links-page min-h-screen bg-page-bg flex">
     <!-- Боковое меню -->
     <aside class="page-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
       <div class="p-6 flex items-center gap-3 pb-[80px]">
@@ -60,7 +60,7 @@
       <div class="mb-8">
         <h1 class="font-manrope font-bold text-[32px] text-text-primary mb-6">Ссылки</h1>
 
-        <div class="flex items-center gap-4 mb-6">
+        <div class="links-toolbar flex items-center gap-4 mb-6">
           <!-- Поиск с белым фоном -->
           <div class="flex-1 relative">
             <input
@@ -93,7 +93,16 @@
       </div>
 
       <!-- Таблица: скругление только сверху -->
-      <div class="bg-white border border-card-border rounded-t-card overflow-hidden">
+      <div class="compact-link-controls">
+        <label class="flex items-center gap-2"><input type="checkbox" @change="toggleSelectAll" :checked="selectedLinks.length > 0 && selectedLinks.length === paginatedLinks.length" />Выбрать все</label>
+        <label class="flex items-center gap-2">Сортировка
+          <select :value="sortField || ''" @change="toggleSort(($event.target as HTMLSelectElement).value as 'createdAt' | 'expiresAt')" class="min-w-0 h-10 border border-card-border rounded-input bg-white px-2">
+            <option disabled value="">Не выбрана</option><option value="createdAt">Дата создания</option><option value="expiresAt">Действует до</option>
+          </select>
+        </label>
+        <button type="button" @click.stop="toggleSort(sortField || 'createdAt')" :title="sortDirection === 'asc' ? 'По убыванию' : 'По возрастанию'" :aria-label="sortDirection === 'asc' ? 'По убыванию' : 'По возрастанию'" class="w-10 h-10 flex items-center justify-center"><img :src="sortDirection === 'asc' ? chevronUpIcon : chevronDownIcon" alt="" class="w-5 h-5" /></button>
+      </div>
+      <div class="links-table-shell bg-white border border-card-border rounded-t-card overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-page-bg border-b border-card-border">
@@ -169,7 +178,7 @@
               <tr
                 v-for="link in paginatedLinks"
                 :key="link.id"
-                class="border-b border-card-border last:border-0 hover:bg-page-bg/30 transition-colors"
+                class="link-table-row border-b border-card-border last:border-0 hover:bg-page-bg/30 transition-colors"
               >
                 <td class="px-4 py-3">
                   <input
@@ -194,6 +203,7 @@
                   <div class="font-inter text-[13px] text-text-secondary mt-0.5 truncate max-w-[250px]">
                     {{ link.originalUrl }}
                   </div>
+                  <div v-if="link.comment" :title="link.comment" class="compact-link-comment font-inter text-[13px] text-text-secondary truncate mt-1">{{ link.comment }}</div>
                 </td>
 
                 <td class="px-4 py-3 font-inter text-[17px] text-text-primary whitespace-nowrap">
@@ -239,11 +249,14 @@
                 <td class="px-4 py-3 relative">
                   <button
                     @click.stop="toggleDropdown(link.id)"
+                    aria-label="Действия со ссылкой"
+                    :aria-expanded="showDropdownId === link.id"
                     class="p-1 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-page-bg"
                   >
                     <img src="@/components/icons/more_vert.svg" alt="" />
                   </button>
 
+                  <button v-if="showDropdownId === link.id" type="button" class="link-menu-backdrop" aria-label="Закрыть меню" @click.stop="showDropdownId = null"></button>
                   <Transition
                     enter-active-class="transition-all duration-200 ease-out"
                     enter-from-class="opacity-0 scale-95 -translate-y-1"
@@ -254,9 +267,25 @@
                   >
                     <div
                       v-if="showDropdownId === link.id"
-                      class="absolute right-2 top-10 bg-white border border-card-border rounded-[10px] shadow-xl py-2 w-44 z-30"
+                      class="link-actions-menu absolute right-2 top-10 bg-white border border-card-border rounded-[10px] shadow-xl py-2 w-44 z-30"
                       @click.stop
+                      @keydown.esc.stop="showDropdownId = null"
                     >
+                      <div class="link-menu-heading">
+                        <span class="font-medium text-text-primary">Действия со ссылкой</span>
+                        <button type="button" aria-label="Закрыть меню" title="Закрыть" class="w-10 h-10 flex items-center justify-center" @click="showDropdownId = null"><img src="@/components/icons/close_x.svg" alt="" class="w-6 h-6" /></button>
+                      </div>
+                      <div class="compact-link-details">
+                        <dl class="px-4 py-2 text-[13px] text-text-secondary space-y-1">
+                          <dt>Дата создания</dt><dd class="text-text-primary">{{ formatDate(link.createdAt) }}</dd>
+                          <dt>Действует до</dt><dd class="text-text-primary">{{ link.expiresAt ? formatDate(link.expiresAt) : '—' }}</dd>
+                        </dl>
+                        <label class="flex items-center justify-between gap-3 px-4 py-2.5 text-[15px]">
+                          Приватная ссылка
+                          <input type="checkbox" :checked="link.isPrivate" @change="togglePrivacy(link.id)" class="w-4 h-4 accent-primary" />
+                        </label>
+                        <button @click="editComment(link.id); showDropdownId = null" class="w-full px-4 py-2.5 text-left text-[15px] hover:bg-page-bg flex items-center gap-3"><img src="@/components/icons/edit.svg" alt="" class="w-5 h-5" />Комментарий</button>
+                      </div>
                       <button
                         @click="handleEditLink(link.id)"
                         class="w-full px-4 py-2.5 text-left font-inter text-[15px] text-text-primary hover:bg-page-bg transition-colors flex items-center gap-3"
@@ -291,7 +320,7 @@
       <!-- Пагинация: скругление только снизу -->
       <div
         v-if="filteredLinks.length > 0"
-        class="bg-white border border-t-0 border-card-border rounded-b-card flex items-center justify-between px-4 py-3"
+        class="links-pagination bg-white border border-t-0 border-card-border rounded-b-card flex items-center justify-between px-4 py-3"
       >
         <div class="flex items-center gap-4">
           <select
