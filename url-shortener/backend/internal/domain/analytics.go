@@ -1,10 +1,12 @@
 package domain
 
 type AnalyticsOverview struct {
-	TotalClicks   int64   `json:"total_clicks"`
-	UniqueClicks  int64   `json:"unique_clicks"`
-	BounceRate    float64 `json:"bounce_rate"`
-	AvgTimeOnSite float64 `json:"avg_time_on_site"`
+	PreviousTotalClicks  int64   `json:"previous_total_clicks"`
+	PreviousUniqueClicks int64   `json:"previous_unique_clicks"`
+	TotalClicks          int64   `json:"total_clicks"`
+	UniqueClicks         int64   `json:"unique_clicks"`
+	BounceRate           float64 `json:"bounce_rate"`
+	AvgTimeOnSite        float64 `json:"avg_time_on_site"`
 }
 
 type ClicksOverTime struct {

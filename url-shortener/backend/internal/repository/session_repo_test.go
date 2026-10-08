@@ -69,6 +69,13 @@ func TestClickEvents(t *testing.T) {
 	if overview.TotalClicks != 10 {
 		t.Fatalf("legacy counts duplicated/lost: %d", overview.TotalClicks)
 	}
+	comparison, err := repo.GetOverviewStats(ctx, 1, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if comparison.TotalClicks != 3 || comparison.PreviousTotalClicks != 7 || comparison.PreviousUniqueClicks != 1 {
+		t.Fatalf("incorrect previous period: %+v", comparison)
+	}
 	var link, views int
 	if err := db.QueryRowContext(ctx, "SELECT link_id, page_views FROM analytics_sessions WHERE session_id='visitor-link-1'").Scan(&link, &views); err != nil {
 		t.Fatal(err)

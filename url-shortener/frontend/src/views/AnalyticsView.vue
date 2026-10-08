@@ -1,6 +1,6 @@
 <template>
   <div class="analytics-page min-h-screen bg-page-bg flex">
-    <aside class="analytics-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
+    <aside class="page-sidebar analytics-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
       <div class="p-6 flex items-center gap-3 pb-[80px]">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
           <img src="@/components/icons/linqs_logo.svg" alt="" />
@@ -60,7 +60,7 @@
       <div class="analytics-header flex items-center justify-between mb-6">
         <h1 class="font-manrope font-bold text-[32px] text-text-primary">Аналитика / Все</h1>
         <button
-          @click="showWIPPopup = true"
+          @click="widgetDialog?.showModal()"
           class="h-10 px-6 bg-primary text-white rounded-input font-inter text-[17px] font-medium hover:bg-[#013d41] transition-colors"
         >
           Добавить виджет
@@ -93,7 +93,6 @@
 
         <select
           v-model="selectedDays"
-          @change="loadAllData"
           class="h-10 px-4 border border-card-border rounded-input font-inter text-[17px] text-text-secondary bg-white focus:outline-none focus:border-primary"
         >
           <option value="7">7 дней</option>
@@ -102,235 +101,87 @@
         </select>
       </div>
 
-      <!-- Основной график -->
-      <div class="analytics-chart bg-white rounded-card border border-card-border p-6 mb-6">
-        <h2 class="font-inter text-[17px] font-medium text-text-secondary mb-4">
-          График количества переходов
-        </h2>
-        <div v-if="loading" class="h-[300px] flex items-center justify-center">
-          <div class="text-text-secondary">Загрузка...</div>
+      <AnalyticsWidget title="График количества переходов" :removable="false" class="analytics-chart mb-6">
+        <div class="relative">
+          <div ref="lineChartRef" class="h-[300px] w-full"></div>
+          <div v-if="loading" class="absolute inset-0 bg-white/80 flex items-center justify-center text-text-secondary">Загрузка...</div>
         </div>
-        <div ref="lineChartRef" class="h-[300px] w-full"></div>
-      </div>
+      </AnalyticsWidget>
 
-      <!-- Сетка виджетов -->
-      <div class="analytics-widgets grid grid-cols-3 gap-6">
-        <!-- 1. Переходы -->
-        <div class="bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary">Переходы</span>
-            </div>
-            <button
-              @click="removeWidget('1')"
-              class="text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
-            </button>
-          </div>
+      <p v-if="loadError" role="alert" class="text-error mb-4">{{ loadError }}</p>
+      <VueDraggableNext v-model="selectedWidgets" class="analytics-widgets grid grid-cols-3 gap-6"
+        handle=".widget-drag-handle" :animation="180" :force-fallback="true"
+        :fallback-tolerance="5" ghost-class="widget-ghost" chosen-class="widget-chosen">
+        <AnalyticsWidget
+          v-for="id in selectedWidgets"
+          :key="id"
+          draggable
+          :title="widgetOptions.find(widget => widget.id === id)?.title || ''"
+          @close="removeWidget(id)"
+          @move="moveWidget(id, $event)"
+        >
+          <template v-if="id === '1' || id === '2'">
           <div class="font-manrope font-bold text-[28px] text-text-primary">
-            {{ formatNumber(overview.total_clicks) }}
+            {{ loading ? '…' : formatNumber(id === '1' ? overview.total_clicks : overview.unique_clicks) }}
           </div>
-          <div class="text-success font-inter text-[15px] mt-1">
-            +{{ calculateGrowth(overview.total_clicks, prevOverview.total_clicks) }}% относительно
-            прошлой недели
+          <div class="mt-3 font-inter text-[15px] space-y-2">
+            <p v-if="loading" class="text-text-secondary">Загрузка сравнения...</p>
+            <template v-else-if="!loadError && previousClicks(id) !== undefined">
+              <p :style="{ color: currentClicks(id) > previousClicks(id)! ? '#10B981' : currentClicks(id) < previousClicks(id)! ? '#EF4444' : '#475569' }">
+                {{ comparisonText(id) }} {{ selectedDays === '7' ? 'относительно прошлой недели' : `относительно предыдущих ${selectedDays} дней` }}
+              </p>
+              <p class="text-text-secondary">{{ formatNumber(previousClicks(id)!) }} {{ selectedDays === '7' ? 'за прошлую неделю' : `за предыдущие ${selectedDays} дней` }}</p>
+            </template>
+            <p v-else class="text-text-secondary">Сравнение недоступно</p>
           </div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">
-            {{ formatNumber(prevOverview.total_clicks) }} на прошлой неделе
-          </div>
-        </div>
-
-        <!-- 2. Уникальные переходы -->
-        <div class="bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary"
-                >Уникальные переходы</span
-              >
-            </div>
-            <button
-              @click="removeWidget('2')"
-              class="text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">
-            {{ formatNumber(overview.unique_clicks) }}
-          </div>
-          <div class="text-success font-inter text-[15px] mt-1">
-            +{{ calculateGrowth(overview.unique_clicks, prevOverview.unique_clicks) }}% относительно
-            прошлой недели
-          </div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">
-            {{ formatNumber(prevOverview.unique_clicks) }} на прошлой неделе
-          </div>
-        </div>
-
-        <!-- 3. Показатель отказа -->
-        <div class="bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary"
-                >Показатель отказа</span
-              >
-            </div>
-            <button
-              @click="removeWidget('3')"
-              class="text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">
-            {{ overview.bounce_rate.toFixed(1) }}%
-          </div>
-          <div class="text-success font-inter text-[15px] mt-1">
-            -2% относительно прошлой недели
-          </div>
-          <div class="mt-4 space-y-2">
-            <div class="text-text-secondary font-inter text-[15px] font-medium">
-              Наиболее частые отказы
-            </div>
-            <div
-              v-for="stat in bounceRate.slice(0, 2)"
-              :key="stat.link_url"
-              class="flex items-center justify-between font-inter text-[17px] text-text-primary"
-            >
-              <span>{{ truncateUrl(stat.link_url) }}</span>
-              <span class="text-text-secondary">{{ stat.bounce_rate.toFixed(0) }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Топ локаций -->
-        <div class="flex flex-col bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary"
-                >Топ локаций</span
-              >
-            </div>
-            <button
-              @click="removeWidget('4')"
-              class="text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="space-y-3 mt-2">
-            <div
-              v-for="loc in locations"
-              :key="loc.country_code"
-              class="flex items-center justify-between font-inter text-[17px]"
-            >
-              <div class="flex items-center gap-2">
-                <img
-                  :src="getFlagUrl(loc.country_code)"
-                  :alt="loc.country"
-                  class="w-6 h-4 object-cover rounded-sm"
-                  @error="($event.target as HTMLImageElement).style.display = 'none'"
-                />
-                <span class="text-text-primary">{{ loc.country }}</span>
+          </template>
+          <template v-else-if="id === '4'">
+            <div class="space-y-3">
+              <div v-for="loc in locations" :key="loc.country_code" class="flex items-center justify-between gap-3 font-inter text-[17px]">
+                <div class="flex items-center gap-2 min-w-0">
+                  <img :src="getFlagUrl(loc.country_code)" :alt="loc.country" class="w-6 h-4 shrink-0 object-cover rounded-sm" @error="($event.target as HTMLImageElement).style.display = 'none'" />
+                  <span class="text-text-primary">{{ loc.country }}</span>
+                </div>
+                <span class="text-text-secondary shrink-0">{{ loc.percent.toFixed(1) }}%</span>
               </div>
-              <span class="text-text-secondary font-medium">{{ loc.percent.toFixed(1) }}%</span>
+              <p v-if="!locations.length" class="text-text-secondary">{{ loading ? 'Загрузка...' : 'Нет данных' }}</p>
             </div>
-          </div>
-          <a
-            href="https://db-ip.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="self-start mt-auto pt-4 font-inter text-[12px] text-text-secondary underline underline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4 transition-colors"
-          >IP Geolocation by DB-IP</a>
-        </div>
-
-        <!-- 5. Устройства -->
-        <div class="bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary"
-                >Наиболее распространенные устройства</span
-              >
-            </div>
-            <button
-              @click="removeWidget('5')"
-              class="text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5 flex-shrink-0" />
-            </button>
-          </div>
-          <div class="device-breakdown flex items-center gap-4">
-            <div ref="donutChartRef" class="shrink-0 h-[160px] w-[160px]"></div>
-            <div class="device-legend min-w-0 flex-1 space-y-2">
-              <div
-                v-for="dev in devices"
-                :key="dev.name"
-                class="flex items-center gap-2 font-inter text-[15px]"
-              >
-                <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: dev.color }"></span>
-                <span class="text-text-primary">{{ dev.name }}</span>
-                <span class="text-text-secondary ml-auto">{{ dev.percent.toFixed(1) }}%</span>
+            <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer" class="self-start mt-auto pt-4 font-inter text-[12px] text-text-secondary underline underline-offset-2 hover:text-primary">IP Geolocation by DB-IP</a>
+          </template>
+          <template v-else-if="id === '5'">
+            <div class="device-breakdown flex items-center gap-4">
+              <div :ref="(el) => { donutChartRef = el as HTMLElement | null }" class="shrink-0 h-[160px] w-[160px]"></div>
+              <div class="device-legend min-w-0 flex-1 space-y-2">
+                <div v-for="dev in devices" :key="dev.name" class="flex items-center gap-2 font-inter text-[15px]">
+                  <span class="w-3 h-3 shrink-0 rounded-full" :style="{ backgroundColor: dev.color }"></span>
+                  <span class="text-text-primary">{{ dev.name }}</span>
+                  <span class="text-text-secondary ml-auto">{{ dev.percent.toFixed(1) }}%</span>
+                </div>
               </div>
             </div>
-          </div>
+            <p v-if="!devices.length" class="text-text-secondary">{{ loading ? 'Загрузка...' : 'Нет данных' }}</p>
+          </template>
+        </AnalyticsWidget>
+      </VueDraggableNext>
+      <dialog ref="widgetDialog" class="widget-dialog bg-white text-text-primary rounded-card border border-card-border p-6" aria-labelledby="widget-dialog-title" @click="closeWidgetBackdrop">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 id="widget-dialog-title" class="font-manrope font-bold text-[22px]">Добавить виджет</h2>
+          <button type="button" autofocus aria-label="Закрыть" title="Закрыть" class="w-10 h-10 shrink-0 flex items-center justify-center" @click="widgetDialog?.close()">
+            <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
+          </button>
         </div>
-
-        <!-- 6. Среднее время на сайте -->
-        <div class="bg-white rounded-card border border-card-border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-              <img
-                src="@/components/icons/drag.svg"
-                alt=""
-                class="w-5 h-5 text-text-secondary opacity-40"
-              />
-              <span class="font-inter text-[17px] font-medium text-text-secondary"
-                >Среднее время на сайте</span
-              >
-            </div>
-            <button
-              @click="removeWidget('6')"
-              class="text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <img src="@/components/icons/close_x.svg" alt="" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="font-manrope font-bold text-[28px] text-text-primary">
-            {{ formatTime(overview.avg_time_on_site) }}
-          </div>
-          <div class="text-success font-inter text-[15px] mt-1">
-            +6% относительно прошлой недели
-          </div>
-          <div class="text-text-secondary font-inter text-[15px] mt-1">
-            {{ formatTime(overview.avg_time_on_site * 0.93) }} на прошлой неделе
-          </div>
+        <div class="divide-y divide-card-border">
+          <button v-for="widget in widgetOptions" :key="widget.id" type="button"
+            :disabled="!widget.available || selectedWidgets.includes(widget.id)"
+            class="w-full flex items-center justify-between gap-4 py-4 text-left font-inter text-[16px] hover:text-primary disabled:opacity-50 disabled:cursor-default"
+            @click="addWidget(widget.id)">
+            <span>{{ widget.title }}</span>
+            <span v-if="!widget.available" class="text-[13px] shrink-0">Скоро</span>
+            <span v-else-if="selectedWidgets.includes(widget.id)" class="text-[13px] shrink-0">Добавлен</span>
+            <span v-else aria-hidden="true" class="text-[24px] shrink-0">+</span>
+          </button>
         </div>
-      </div>
+      </dialog>
     </main>
 
     <!-- Попап "В разработке" -->
@@ -362,6 +213,8 @@
 
 <script setup lang="ts">
 import SidebarProfile from '@/components/SidebarProfile.vue'
+import AnalyticsWidget from '@/components/AnalyticsWidget.vue'
+import { VueDraggableNext } from 'vue-draggable-next'
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
@@ -370,7 +223,6 @@ import {
   type AnalyticsOverview,
   type LocationStat,
   type DeviceStat,
-  type BounceRateStat,
 } from '@/services/analytics'
 import { countryNameMap } from '@/data/countries'
 
@@ -379,6 +231,39 @@ const showWIPPopup = ref(false)
 const searchQuery = ref('')
 const loading = ref(false)
 const selectedDays = ref('7')
+const widgetDialog = ref<HTMLDialogElement | null>(null)
+const loadError = ref('')
+const widgetOptions = [
+  { id: '1', title: 'Переходы', available: true },
+  { id: '2', title: 'Уникальные переходы', available: true },
+  { id: '4', title: 'Топ локаций', available: true },
+  { id: '5', title: 'Устройства', available: true },
+  { id: '3', title: 'Показатель отказа', available: false },
+  { id: '6', title: 'Среднее время на сайте', available: false },
+]
+const storageKey = 'analytics.widgets.v1'
+const selectedWidgets = ref<string[]>(['1'])
+try {
+  const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || 'null')
+  if (Array.isArray(saved)) {
+    selectedWidgets.value = [...new Set(saved.filter((id): id is string =>
+      typeof id === 'string' && widgetOptions.some(widget => widget.id === id && widget.available)))]
+  }
+} catch { /* Keep the default layout when storage is unavailable or invalid. */ }
+watch(selectedWidgets, (ids) => {
+  try { localStorage.setItem(storageKey, JSON.stringify(ids)) } catch { /* Layout remains usable without storage. */ }
+})
+const addWidget = (id: string) => {
+  if (selectedWidgets.value.includes(id) || !widgetOptions.some(widget => widget.id === id && widget.available)) return
+  selectedWidgets.value = [...selectedWidgets.value, id]
+  widgetDialog.value?.close()
+}
+const closeWidgetBackdrop = (event: MouseEvent) => {
+  const dialog = widgetDialog.value
+  if (!dialog || event.target !== dialog) return
+  const bounds = dialog.getBoundingClientRect()
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close()
+}
 
 const lineChartRef = ref<HTMLElement | null>(null)
 const donutChartRef = ref<HTMLElement | null>(null)
@@ -394,49 +279,41 @@ const overview = ref<AnalyticsOverview>({
   avg_time_on_site: 0,
 })
 
-const prevOverview = ref<AnalyticsOverview>({
-  total_clicks: 0,
-  unique_clicks: 0,
-  bounce_rate: 0,
-  avg_time_on_site: 0,
-})
 
 const locations = ref<LocationStat[]>([])
 const devices = ref<DeviceStat[]>([])
-const bounceRate = ref<BounceRateStat[]>([])
 const clicksOverTime = ref<{ labels: string[]; values: number[] }>({ labels: [], values: [] })
 
 // Загрузка всех данных
 const loadAllData = async () => {
   loading.value = true
+  loadError.value = ''
   const days = parseInt(selectedDays.value)
 
   try {
     console.log('📡 Fetching analytics for', days, 'days...')
 
-    const [overviewData, clicksData, locationsData, devicesData, bounceData] = await Promise.all([
+    const [overviewData, clicksData, locationsData, devicesData] = await Promise.all([
       analyticsAPI.getOverview(days),
       analyticsAPI.getClicksOverTime(days),
       analyticsAPI.getTopLocations(days, 5),
       analyticsAPI.getDeviceStats(days),
-      analyticsAPI.getBounceRate(days),
     ])
 
     console.log('✅ Overview:', overviewData)
     console.log('✅ Clicks over time:', clicksData)
     console.log('✅ Locations:', locationsData)
     console.log('✅ Devices:', devicesData)
-    console.log('✅ Bounce rate:', bounceData)
 
     overview.value = overviewData
     clicksOverTime.value = clicksData
     locations.value = locationsData || []
     devices.value = devicesData || []
-    bounceRate.value = bounceData || []
 
     updateLineChart()
     updateDonutChart()
   } catch (error: any) {
+    loadError.value = 'Не удалось загрузить аналитику'
     console.error('❌ Error loading analytics:', error)
     if (error.response) {
       console.error('Status:', error.response.status)
@@ -507,25 +384,16 @@ const formatNumber = (num: number): string => {
   return num.toString()
 }
 
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  if (mins > 0) {
-    return `${mins} мин.${secs > 0 ? ` ${secs} сек.` : ''}`
-  }
-  return `${secs} сек.`
-}
-
-const calculateGrowth = (current: number, prev: number): number => {
-  if (prev === 0) return 0
-  return Math.round(((current - prev) / prev) * 100)
-}
-
-const truncateUrl = (url: string): string => {
-  if (url.length > 25) {
-    return url.substring(0, 22) + '...'
-  }
-  return url
+const currentClicks = (id: string) => id === '1' ? overview.value.total_clicks : overview.value.unique_clicks
+const previousClicks = (id: string) => id === '1' ? overview.value.previous_total_clicks : overview.value.previous_unique_clicks
+const comparisonText = (id: string): string => {
+  const previous = previousClicks(id)
+  if (previous === undefined) return ''
+  const difference = currentClicks(id) - previous
+  if (difference === 0) return 'Без изменений'
+  if (previous === 0) return `+${formatNumber(difference)} переходов`
+  const percent = Math.abs(difference / previous * 100)
+  return `${difference > 0 ? '+' : '-'}${percent < 0.1 ? '<0,1' : percent.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}%`
 }
 
 const getFlagUrl = (countryCode: string) => {
@@ -613,7 +481,17 @@ const initCharts = () => {
 }
 
 const removeWidget = (id: string) => {
-  // Твоя логика удаления виджетов
+  selectedWidgets.value = selectedWidgets.value.filter(widget => widget !== id)
+}
+
+const moveWidget = (id: string, direction: number) => {
+  const index = selectedWidgets.value.indexOf(id)
+  const target = index + direction
+  if (index < 0 || target < 0 || target >= selectedWidgets.value.length) return
+  const reordered = [...selectedWidgets.value]
+  reordered.splice(index, 1)
+  reordered.splice(target, 0, id)
+  selectedWidgets.value = reordered
 }
 
 const handleLogout = () => {
@@ -633,6 +511,17 @@ onMounted(() => {
   if (donutChartRef.value) chartObserver.observe(donutChartRef.value)
 })
 
+watch(donutChartRef, (element, previous) => {
+  if (previous) chartObserver?.unobserve(previous)
+  donutChart?.dispose()
+  donutChart = null
+  if (element) {
+    initCharts()
+    updateDonutChart()
+    chartObserver?.observe(element)
+  }
+}, { flush: 'post' })
+
 onBeforeUnmount(() => {
   chartObserver?.disconnect()
   lineChart?.dispose()
@@ -646,6 +535,27 @@ watch(selectedDays, () => {
 </script>
 
 <style scoped>
+.analytics-widgets :deep(.widget-ghost) { opacity: 0.3; }
+.analytics-widgets :deep(.widget-chosen) { outline: 2px solid var(--color-primary); }
+.widget-dialog {
+  margin: auto;
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+.widget-dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+  backdrop-filter: blur(4px);
+}
+.widget-dialog[open] { animation: widget-appear 200ms ease-out; }
+@keyframes widget-appear {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .widget-dialog[open] { animation: none; }
+}
+
 .analytics-main,
 .analytics-widgets > *,
 .analytics-widgets .flex > div {
@@ -730,6 +640,8 @@ watch(selectedDays, () => {
 
   .analytics-sidebar {
     position: fixed;
+    height: auto;
+    overflow: visible;
     inset: auto 0 0;
     z-index: 40;
     width: 100%;

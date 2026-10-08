@@ -1,5 +1,28 @@
 @import 'tailwindcss';
 
+.page-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex-shrink: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+}
+
+.page-sidebar > * {
+  flex-shrink: 0;
+}
+
+@media (width < 768px) {
+  .settings-sidebar {
+    position: static;
+    align-self: stretch;
+    height: auto;
+    overflow: visible;
+  }
+}
+
 /* Кастомные цвета и шрифты через CSS-переменные */
 @theme {
   /* Шрифты */

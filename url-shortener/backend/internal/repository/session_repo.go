@@ -145,6 +145,11 @@ func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, 
         WITH clicks AS (
             SELECT c.* FROM analytics_click_totals c JOIN links l ON c.link_id = l.id
             WHERE l.user_id = $1 AND c.clicked_at >= NOW() - make_interval(days => $2)
+        ), previous_clicks AS (
+            SELECT c.* FROM analytics_click_totals c JOIN links l ON c.link_id = l.id
+            WHERE l.user_id = $1
+              AND c.clicked_at >= NOW() - make_interval(days => $2) * 2
+              AND c.clicked_at < NOW() - make_interval(days => $2)
         )
         SELECT
             (SELECT COALESCE(SUM(clicks), 0)::bigint FROM clicks) as total_clicks,
@@ -153,11 +158,13 @@ func (r *postgresSessionRepo) GetOverviewStats(ctx context.Context, userID int, 
             CASE 
                 WHEN COUNT(DISTINCT s.session_id) = 0 THEN 0 
                 ELSE COUNT(DISTINCT CASE WHEN s.is_bounce THEN s.session_id END) * 100.0 / COUNT(DISTINCT s.session_id) 
-            END as bounce_rate
+            END as bounce_rate,
+            (SELECT COALESCE(SUM(clicks), 0)::bigint FROM previous_clicks),
+            (SELECT COUNT(DISTINCT session_id) FROM previous_clicks)
         FROM analytics_sessions s
         WHERE s.session_id IN (SELECT session_id FROM clicks)
     `
-	err := r.db.QueryRowContext(ctx, query, userID, days).Scan(&o.TotalClicks, &o.UniqueClicks, &o.AvgTimeOnSite, &o.BounceRate)
+	err := r.db.QueryRowContext(ctx, query, userID, days).Scan(&o.TotalClicks, &o.UniqueClicks, &o.AvgTimeOnSite, &o.BounceRate, &o.PreviousTotalClicks, &o.PreviousUniqueClicks)
 	return &o, err
 }
 

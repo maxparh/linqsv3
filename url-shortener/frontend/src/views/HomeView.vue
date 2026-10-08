@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-page-bg flex">
     <!-- Боковое меню -->
-    <aside class="w-[224px] bg-white border-r border-card-border flex flex-col">
+    <aside class="page-sidebar w-[224px] bg-white border-r border-card-border flex flex-col">
       <!-- Логотип -->
       <div class="p-6 flex items-center gap-3 pb-[80px]">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">

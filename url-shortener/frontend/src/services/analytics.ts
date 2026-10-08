@@ -4,6 +4,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 // Типы для ответов бэкенда
 export interface AnalyticsOverview {
+  previous_total_clicks?: number
+  previous_unique_clicks?: number
   total_clicks: number
   unique_clicks: number
   bounce_rate: number
